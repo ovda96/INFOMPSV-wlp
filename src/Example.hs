@@ -1,3 +1,4 @@
+-- Included in Tjalle's boilerplate: unused (TODO delete). Useful for testing whether z3 works.
 -- Adapted from https://github.com/IagoAbal/haskell-z3/blob/master/examples/Example/Monad/Tuple.hs
 
 -- | Create and use tuples.

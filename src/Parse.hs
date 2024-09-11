@@ -1,0 +1,12 @@
+-- | Parse.hs: Parses the supplied path, pretty prints the results and echoes them back to the console.
+module Parse (run) where
+--
+
+import GCLUtils(echoTestParser)
+
+run :: Bool -> Int -> String -> IO ()
+run heuristics k path = do
+  putStrLn $ "Heuristics: " ++ if heuristics then "true" else "false"
+  putStrLn $ "K: " ++ show k
+  putStrLn "---"
+  echoTestParser path

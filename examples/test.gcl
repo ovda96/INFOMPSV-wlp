@@ -1,0 +1,8 @@
+// src: https://github.com/wooshrow/gclparser
+
+// Just a very simple example; it is faulty
+E(x:int | y:int){
+  assume 1<x ;
+  while 0<x do{ x:=x-1 } ; y:=x ;
+  assert y=1 // faulty
+}
