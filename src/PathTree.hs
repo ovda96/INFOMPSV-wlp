@@ -34,7 +34,7 @@ generatePaths n = travel 0 []
     travel :: Int -> [Stmt] -> PathTree -> [[Stmt]]
     travel _ xs Leaf           = [xs]
 
-    travel c xs (Node stmt pt)  | c < n     = travel (c + 1) (stmt:xs) pt
+    travel c xs (Node stmt pt)  | c < n     = travel (c + 1) (xs ++ [stmt]) pt
                                 | otherwise = []
 
-    travel c xs (CondNode g pt1 pt2) = travel (c + 1) (Assume g:xs) pt1 ++ travel (c + 1) (Assume (OpNeg g):xs) pt2
+    travel c xs (CondNode g pt1 pt2) = travel (c + 1) (xs ++ [Assume g]) pt1 ++ travel (c + 1) (xs ++ [Assume (OpNeg g)]) pt2
