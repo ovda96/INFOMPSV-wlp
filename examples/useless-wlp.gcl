@@ -1,0 +1,6 @@
+// Useless program that is used to check the current wlp translator, that
+//    still does not support anything else than skip, assert and assume.
+min(x:int, y:int | z:int) {
+  if y < x then { skip } else { skip } ;
+  assert ((z = x) || (z = y)) && (z <= x) && (z <= y)
+}

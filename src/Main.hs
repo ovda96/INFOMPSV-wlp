@@ -1,9 +1,12 @@
+{-# LANGUAGE InstanceSigs #-}
 module Main (main) where
 -- 
 import Options
 
 import Parse (run)
-import Example (run)
+
+-- To test whether Z3 works correctly, use below.
+-- import Example (run)
 
 -- Option/arg parsing
 data MainOptions = MainOptions
@@ -12,16 +15,17 @@ data MainOptions = MainOptions
   }
 
 instance Options MainOptions where
+  defineOptions :: DefineOptions MainOptions
   defineOptions = MainOptions
     <$> simpleOption "heuristics" False
         "Turn on heuristics"
-    <*> simpleOption "k" 0
-         "The inclusive maximum path length to be evaluated (k)"
+    <*> simpleOption "length" 0
+         "The inclusive maximum path length to be evaluated"
 
 -- MAIN
 -- When using cabal run including arguments/options, use:
 --    cabal run exe:wlp-verifier -- {ARGS} {OPTS}
---  I.e.: cabal run exe:wlp-verifier -- "./examples/test.gcl" --heuristics
+--  I.e.: cabal run exe:wlp-verifier -- "./examples/test.gcl" --heuristics --length=12
 main :: IO ()
 main = runCommand process
   where 
