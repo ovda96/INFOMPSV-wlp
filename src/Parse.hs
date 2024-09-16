@@ -2,7 +2,7 @@
 module Parse (run) where
 --
 import GCLUtils(parseGCLfile)
-import PathTree(generate)
+import PathTree(generate, generatePaths)
 
 run :: Bool -> Int -> String -> IO ()
 run heuristics k path = do
@@ -12,4 +12,5 @@ run heuristics k path = do
   gcl <- parseGCLfile path
   let (Right prg) = gcl
   print prg
-  print $ PathTree.generate prg
+  let ptree = PathTree.generate prg
+  print $ PathTree.generatePaths k ptree

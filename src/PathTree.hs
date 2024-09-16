@@ -2,7 +2,8 @@
 
 module PathTree (
   PathTree(Node, CondNode, Leaf),
-  generate
+  generate,
+  generatePaths
   ) where
 --
 import GCLParser.GCLDatatype
@@ -26,3 +27,14 @@ generate (Program { stmt })  = process Leaf stmt
     process pt (Block vd s)         = undefined
     process pt (TryCatch msg s1 s2) = undefined
     process pt s                    = Node s pt -- the rest
+
+generatePaths :: Int -> PathTree -> [[Stmt]]
+generatePaths n = travel 0 []
+  where
+    travel :: Int -> [Stmt] -> PathTree -> [[Stmt]]
+    travel _ xs Leaf           = [xs]
+
+    travel c xs (Node stmt pt)  | c < n     = travel (c + 1) (stmt:xs) pt
+                                | otherwise = []
+
+    travel c xs (CondNode g pt1 pt2) = travel (c + 1) (Assume g:xs) pt1 ++ travel (c + 1) (Assume (OpNeg g):xs) pt2
