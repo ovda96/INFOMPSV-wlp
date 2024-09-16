@@ -43,6 +43,10 @@ simplify = Utils.apply helper
     helper (BinopExpr And (LitB True) e) = e
     helper (BinopExpr And e (LitB True)) = e
 
+    -- False && ... or ... && False == False
+    helper (BinopExpr And (LitB False) _) = LitB False
+    helper (BinopExpr And _ (LitB False)) = LitB False
+
     -- True || ... or ... || True == True
     helper (BinopExpr Or (LitB True) _) = LitB True
     helper (BinopExpr Or _ (LitB True)) = LitB True
