@@ -8,18 +8,21 @@ import PathTree(generate, generatePaths)
 import Wlp(calculate)
 
 run :: Bool -> Int -> String -> IO ()
-run heuristics k path = do
-  putStrLn $ "Heuristics: " ++ if heuristics then "true" else "false"
-  putStrLn $ "K: " ++ show k
-  putStrLn "---"
+run heur k path = do
 
+  -- 1) Parse file...
   gcl <- parseGCLfile path
-  let (Right program) = gcl
-  print program
+  let (Right prg) = gcl
+  print "PROGRAM -----------------------"
+  print prg
   
-  let tree = PathTree.generate program
-  let paths = PathTree.generatePaths k tree
+  -- 2) Construct tree and valid paths of length.
+  let tree = PathTree.generate prg
+  paths <- PathTree.generatePaths k prg tree
+  print "PATHS -------------------------"
+  print $ "found " ++ show (length paths) ++ " paths"
   print paths
 
   let wlps = map Wlp.calculate paths
+  print "WLPS --------------------------"
   print wlps
