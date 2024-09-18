@@ -45,5 +45,5 @@ validate v p (x:xs) = do
     -- If we encounter a faulty path, we reject and print it
     else do
       print "reject"
-      print $ show x
+      print $ show x -- TODO: Should print path!
       return False
