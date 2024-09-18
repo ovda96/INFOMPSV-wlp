@@ -19,13 +19,13 @@ run heur k v path = do
   -- 2) Construct tree and valid paths of max.length k
   let tree = PathTree.generate prg
   paths <- PathTree.generatePaths k prg tree
-  when v $ print "\n[PATHS]"
+  when v $ print "[PATHS]"
   when v $ print $ length paths
   when v $ print paths
 
   -- 3) Calculate WLPs
   let wlps = map Wlp.calculate paths
-  when v $ print "\n[WLPs]"
+  when v $ print "[WLPs]"
   when v $ print wlps
 
   -- 4) Validate WLPs of complete paths
@@ -44,5 +44,6 @@ validate v p (x:xs) = do
     then validate v p xs
     -- If we encounter a faulty path, we reject and print it
     else do
-      print $ "reject\n" ++ show x
+      print "reject"
+      print $ show x
       return False
