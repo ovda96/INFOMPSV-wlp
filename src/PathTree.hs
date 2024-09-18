@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+-- | PathTree.hs: Defines the path tree datatype, relating funcs
 
 module PathTree (
   PathTree(Node, CondNode, Leaf),

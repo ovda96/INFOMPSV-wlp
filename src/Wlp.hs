@@ -1,3 +1,5 @@
+-- | Wlp.hs: Handles Expr to WLP conversion (in Expr-format)
+
 module Wlp (
   calculate,
   simplify, 
@@ -13,15 +15,15 @@ calculate xs = simplify $ foldr translate (LitB True) xs
 
 translate :: Stmt -> Expr -> Expr
 -- TODO Unfinished.
-translate Skip q               = q                      -- wlp skip Q = Q
-translate (Assert e) q         = opAnd e q              -- wlp (assert e) Q = e /\ Q
-translate (Assume e) q         = opImplication e q      -- wlp (assume e) Q = e => Q
-translate (Assign var e) q     = substitute var e q     -- wlp (x:=e) Q = Q[e/x]
-translate (AAssign var i e) q  = substituteArray var i e q
-translate (DrefAssign var e) q = undefined
+translate Skip q               = q                          -- wlp skip Q = Q
+translate (Assert e) q         = opAnd e q                  -- wlp (assert e) Q = e /\ Q
+translate (Assume e) q         = opImplication e q          -- wlp (assume e) Q = e => Q
+translate (Assign var e) q     = substitute var e q         -- wlp (x:=e) Q = Q[e/x]
+translate (AAssign var i e) q  = substituteArray var i e q  -- ...
+translate (DrefAssign var e) q = error "Unimplemented WLP-conversion from DrefAssign"
 
 -- The rest should not appear in our generated path (for now).
-translate _ _                  = undefined
+translate _ _                  = error "Unimplemented WLP-conversion from Expr"
 
 substitute :: String -> Expr -> Expr -> Expr
 -- Substitutes all occurrences of varName x in expression q by e.
@@ -37,13 +39,13 @@ substitute x e = Utils.apply helper
       helper q          = q
 
 substituteArray :: String -> Expr -> Expr -> Expr -> Expr
--- substituse array_name using repby
+-- Substitutes array_name using repby
 substituteArray array_name index assigned_value = Utils.apply helper
   where
     helper :: Expr -> Expr
     helper e@(Var var)  | var == array_name = RepBy e index assigned_value
-                        | otherwise = e
-    helper e = e
+                        | otherwise         = e
+    helper e            = e
 
 simplify :: Expr -> Expr
 -- Simplifies out some common things in the resulting WLP.

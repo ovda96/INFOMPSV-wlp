@@ -58,8 +58,7 @@ executable wlp-verifier
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules:    Example
-                    , Parse
+    other-modules:    Parse
                     , PathTree
                     , Wlp
                     , Utils

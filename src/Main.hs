@@ -1,12 +1,10 @@
 {-# LANGUAGE InstanceSigs #-}
+-- | Main.hs: Entry point, defines CLI-options
+
 module Main (main) where
 -- 
 import Options
-
 import Parse (run)
-
--- To test whether Z3 works correctly, use below.
--- import Example (run)
 
 -- Option/arg parsing
 data MainOptions = MainOptions
@@ -19,7 +17,7 @@ instance Options MainOptions where
   defineOptions = MainOptions
     <$> simpleOption "heuristics" False
         "Turn on heuristics"
-    <*> simpleOption "length" 0
+    <*> simpleOption "length" 0     -- TODO Seems a silly default value
          "The inclusive maximum path length to be evaluated"
 
 -- MAIN
@@ -34,7 +32,3 @@ main = runCommand process
     
     -- Note that we only parse the first supplied file path.
     process opts (p : _)  = Parse.run (optHeuristics opts) (optLength opts) p
-
--- To test whether Z3 works correctly, use below.
--- main :: IO () 
--- main = Example.run

@@ -1,4 +1,4 @@
--- | Parse.hs: Parses the supplied path, pretty prints the results and echoes them back to the console.
+-- | Parse.hs: Parses the supplied path, pretty prints the results and echoes them back to the console
 module Parse (
   run
 ) where

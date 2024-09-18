@@ -1,3 +1,5 @@
+-- | Utils.hs: Utility funcs
+
 module Utils (
   apply
 ) where
