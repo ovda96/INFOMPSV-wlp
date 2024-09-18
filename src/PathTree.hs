@@ -23,18 +23,18 @@ generate :: Program -> PathTree
 generate (Program { stmt })  = process Leaf stmt
   where
     process :: PathTree -> Stmt -> PathTree
-    process pt (Seq s1 s2)          = process (process pt s2) s1
-    process pt (IfThenElse g s1 s2) = CondNode g (process pt s1) (process pt s2)
+    process pt (Seq s1 s2)            = process (process pt s2) s1
+    process pt (IfThenElse g s1 s2)   = CondNode g (process pt s1) (process pt s2)
 
     -- For a while loop, we create an infinite sequence of (if g) -> do the action, recheck guard, or
     --    else, continue to statement after while loop.
-    process pt (While g s)          = CondNode g (process pt (Seq s (While g s))) pt
+    process pt (While g s)            = CondNode g (process pt (Seq s (While g s))) pt
 
     -- TODO
-    process pt (Block vd s)         = undefined
-    process pt (TryCatch msg s1 s2) = undefined
+    process pt e@(Block vd s)         = error $ "Unimplemented PathTree conversion from Stmt Block: " ++ show e
+    process pt e@(TryCatch msg s1 s2) = error $ "Unimplemented PathTree conversion from Stmt TryCatch: " ++ show e
 
-    process pt s                    = Node s pt -- the rest
+    process pt s                      = Node s pt -- the rest
 
 generatePaths :: Int -> Program -> PathTree -> IO [[Stmt]]
 -- Generates a list of program excecutions of max. length n.
