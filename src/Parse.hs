@@ -8,7 +8,7 @@ import PathTree( generate, generatePaths )
 import Wlp( calculate )
 import Control.Monad ( when )
 import GCLParser.GCLDatatype ( Program, Expr )
-import InterfaceZ3 ( isSatisfiable )
+import InterfaceZ3 ( isValid )
 
 run :: Bool -> Int -> Bool -> String -> IO ()
 run heur k v path = do
@@ -39,8 +39,8 @@ validate v p (x:xs) = do
   when v $ print "[EVAL]"
   when v $ print x
 
-  sat <- isSatisfiable p x
-  if sat 
+  valid <- isValid p x
+  if valid
     then validate v p xs
     -- If we encounter a faulty path, we reject and print it
     else do

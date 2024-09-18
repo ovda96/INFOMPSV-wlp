@@ -57,7 +57,7 @@ generatePaths n p = travel 0 []
       feasibleG <- isFeasible p g xs
       feasibleNegG <- isFeasible p (OpNeg g) xs
 
-      b1 <- if feasibleG 
+      b1 <- if feasibleG
         -- If path to g is feasible, we explore; else discard.
         then travel (c + 1) (xs ++ [Assume g]) pt1
         else return []

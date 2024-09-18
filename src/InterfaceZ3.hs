@@ -2,7 +2,8 @@
 -- | InterfaceZ3.hs: Handles Expr to Z3 conversion
 
 module InterfaceZ3 (
-  isSatisfiable
+  isSatisfiable,
+  isValid
 ) where
 
 --
@@ -19,7 +20,7 @@ initialize (Program {input, output}) = map helper (input ++ output)
     helper :: VarDeclaration -> (String, Z3 AST)
     helper (VarDeclaration s (PType PTInt))   = (s, mkIntVar =<< mkStringSymbol s)
     helper (VarDeclaration s (PType PTBool))  = (s, mkBoolVar =<< mkStringSymbol s)
-    helper decl                               = error $ "Unimplemented VarDeclaration: " ++ show decl
+    helper decl                               = error $ "Unimplemented VarDeclaration " ++ show decl
 
 generate :: Program -> Expr -> Z3 AST
 -- Turns an expression into a Z3 AST.
@@ -30,7 +31,7 @@ generate p (Var s)    = fromJust $ lookup s vars
     vars :: [(String, Z3 AST)]
     vars = initialize p
 
-generate _ (LitI i)   = mkInteger (fromIntegral i)
+generate _ (LitI i)   = mkIntNum i
 generate _ (LitB b)   = if b then mkTrue else mkFalse
 generate p (Parens e) = generate p e
 generate p (OpNeg e)  = mkNot =<< generate p e
@@ -67,17 +68,33 @@ generate p exp@(Exists s e) = error $ "Unimplemented Z3 conversion from Exists: 
 
 generate _ exp = error $ "Unimplemented Z3 conversion from Expr: " ++ show exp
 
-checker :: Z3 AST -> Z3 Result
--- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
--- Creates a checker to see if the supplied Z3 AST is satisfiable.
-checker ast = do
-    _ast <- ast
-    assert _ast
-    (verdict, _) <- getModel
-    return verdict
-
 isSatisfiable :: Program -> Expr -> IO Bool
+-- Checks whether an expression is satisfiable.
+-- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
 isSatisfiable p e = do
   conclusion <- evalZ3 $ checker (generate p e)
   return $ conclusion == Sat
+  where
+    checker :: Z3 AST -> Z3 Result
+    checker ast = do
+      _ast <- ast
+      assert _ast
+      (verdict, _) <- getModel
+      return verdict
+
+
+isValid :: Program -> Expr -> IO Bool
+-- Checks whether an expression is valid.
+-- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
+isValid p e = do
+  conclusion <- evalZ3 $ checker (generate p e)
+  return $ conclusion == Sat
+  where
+    checker :: Z3 AST -> Z3 Result
+    checker ast = do
+      _ast <- ast
+      f <- mkNot _ast
+      assert f
+      (verdict, _) <- getModel
+      return verdict
   
