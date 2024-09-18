@@ -19,7 +19,7 @@ initialize (Program {input, output}) = map helper (input ++ output)
     helper :: VarDeclaration -> (String, Z3 AST)
     helper (VarDeclaration s (PType PTInt))   = (s, mkIntVar =<< mkStringSymbol s)
     helper (VarDeclaration s (PType PTBool))  = (s, mkBoolVar =<< mkStringSymbol s)
-    helper _                                  = error "Unimplemented VarDeclaration"
+    helper decl                               = error $ "Unimplemented VarDeclaration: " ++ show decl
 
 generate :: Program -> Expr -> Z3 AST
 -- Turns an expression into a Z3 AST.
@@ -59,12 +59,13 @@ generate p (BinopExpr Minus e1 e2)            = sequence [generate p e1, generat
 generate p (BinopExpr Plus e1 e2)             = sequence [generate p e1, generate p e2] >>= mkAdd
 generate p (BinopExpr Multiply e1 e2)         = sequence [generate p e1, generate p e2] >>= mkMul
 generate p (BinopExpr Divide e1 e2)           = join (liftA2 mkDiv (generate p e1) (generate p e2))
-generate p (BinopExpr Alias e1 e2)            = error "Unimplemented Z3 conversion from BinopExpr Alias"
+generate p (BinopExpr Equal e1 e2)            = join (liftA2 mkEq (generate p e1) (generate p e2))
+generate p exp@(BinopExpr Alias e1 e2)        = error $ "Unimplemented Z3 conversion from BinopExpr Alias: " ++ show exp
 
-generate p (Forall s e) = error "Unimplemented Z3 conversion from Forall"     -- TODO This definitely still needs to be done
-generate p (Exists s e) = error "Unimplemented Z3 conversion from Exists"     -- TODO This definitely still needs to be done
+generate p exp@(Forall s e) = error $ "Unimplemented Z3 conversion from Forall: " ++ show exp     -- TODO This definitely still needs to be done
+generate p exp@(Exists s e) = error $ "Unimplemented Z3 conversion from Exists: " ++ show exp     -- TODO This definitely still needs to be done
 
-generate _ _ = error "Unimplemented Z3 conversion from Expr"
+generate _ exp = error $ "Unimplemented Z3 conversion from Expr: " ++ show exp
 
 checker :: Z3 AST -> Z3 Result
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
@@ -79,3 +80,4 @@ isSatisfiable :: Program -> Expr -> IO Bool
 isSatisfiable p e = do
   conclusion <- evalZ3 $ checker (generate p e)
   return $ conclusion == Sat
+  

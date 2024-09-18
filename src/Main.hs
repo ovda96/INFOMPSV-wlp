@@ -10,15 +10,18 @@ import Parse (run)
 data MainOptions = MainOptions
   { optHeuristics :: Bool
   , optLength :: Int
+  , optVerbose :: Bool
   }
 
 instance Options MainOptions where
   defineOptions :: DefineOptions MainOptions
   defineOptions = MainOptions
     <$> simpleOption "heuristics" False
-        "Turn on heuristics"
+          "Turn on heuristics"
     <*> simpleOption "length" 0     -- TODO Seems a silly default value
-         "The inclusive maximum path length to be evaluated"
+          "The inclusive maximum path length to be evaluated"
+    <*> simpleOption "verbose" False
+          "Turn on detailed information printing"
 
 -- MAIN
 -- When using cabal run including arguments/options, use:
@@ -31,4 +34,4 @@ main = runCommand process
     process _ []          = putStrLn "Please provide path to .gcl-file"
     
     -- Note that we only parse the first supplied file path.
-    process opts (p : _)  = Parse.run (optHeuristics opts) (optLength opts) p
+    process opts (p : _)  = Parse.run (optHeuristics opts) (optLength opts) (optVerbose opts) p

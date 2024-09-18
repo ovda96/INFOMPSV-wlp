@@ -15,15 +15,15 @@ calculate xs = simplify $ foldr translate (LitB True) xs
 
 translate :: Stmt -> Expr -> Expr
 -- TODO Unfinished.
-translate Skip q               = q                          -- wlp skip Q = Q
-translate (Assert e) q         = opAnd e q                  -- wlp (assert e) Q = e /\ Q
-translate (Assume e) q         = opImplication e q          -- wlp (assume e) Q = e => Q
-translate (Assign var e) q     = substitute var e q         -- wlp (x:=e) Q = Q[e/x]
-translate (AAssign var i e) q  = substituteArray var i e q  -- ...
-translate (DrefAssign var e) q = error "Unimplemented WLP-conversion from DrefAssign"
+translate Skip q                    = q                          -- wlp skip Q = Q
+translate (Assert e) q              = opAnd e q                  -- wlp (assert e) Q = e /\ Q
+translate (Assume e) q              = opImplication e q          -- wlp (assume e) Q = e => Q
+translate (Assign var e) q          = substitute var e q         -- wlp (x:=e) Q = Q[e/x]
+translate (AAssign var i e) q       = substituteArray var i e q  -- ...
+translate s@(DrefAssign var e) q    = error $ "Unimplemented WLP-conversion from DrefAssign: " ++ show s
 
 -- The rest should not appear in our generated path (for now).
-translate _ _                  = error "Unimplemented WLP-conversion from Expr"
+translate _ s                       = error $ "Unimplemented WLP-conversion from Stmt: " ++ show s
 
 substitute :: String -> Expr -> Expr -> Expr
 -- Substitutes all occurrences of varName x in expression q by e.

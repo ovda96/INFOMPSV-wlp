@@ -3,26 +3,46 @@ module Parse (
   run
 ) where
 --
-import GCLUtils(parseGCLfile)
-import PathTree(generate, generatePaths)
-import Wlp(calculate)
+import GCLUtils( parseGCLfile )
+import PathTree( generate, generatePaths )
+import Wlp( calculate )
+import Control.Monad ( when )
+import GCLParser.GCLDatatype ( Program, Expr )
+import InterfaceZ3 ( isSatisfiable )
 
-run :: Bool -> Int -> String -> IO ()
-run heur k path = do
-
+run :: Bool -> Int -> Bool -> String -> IO ()
+run heur k v path = do
   -- 1) Parse file...
   gcl <- parseGCLfile path
   let (Right prg) = gcl
-  print "PROGRAM -----------------------"
-  print prg
   
-  -- 2) Construct tree and valid paths of length.
+  -- 2) Construct tree and valid paths of max.length k
   let tree = PathTree.generate prg
   paths <- PathTree.generatePaths k prg tree
-  print "PATHS -------------------------"
-  print $ "found " ++ show (length paths) ++ " paths"
-  print paths
+  when v $ print "\n[PATHS]"
+  when v $ print $ length paths
+  when v $ print paths
 
+  -- 3) Calculate WLPs
   let wlps = map Wlp.calculate paths
-  print "WLPS --------------------------"
-  print wlps
+  when v $ print "\n[WLPs]"
+  when v $ print wlps
+
+  -- 4) Validate WLPs of complete paths
+  result <- validate v prg wlps
+  when result $ print "accept"
+
+validate :: Bool -> Program -> [Expr] -> IO Bool
+-- Validates the supplied WLPs.
+validate _ _ []     = return True
+validate v p (x:xs) = do
+  when v $ print "[EVAL]"
+  when v $ print x
+
+  sat <- isSatisfiable p x
+  if sat 
+    then validate v p xs
+    -- If we encounter a faulty path, we reject and print it
+    else do
+      print $ "reject\n" ++ show x
+      return False

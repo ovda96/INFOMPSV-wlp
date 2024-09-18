@@ -52,6 +52,7 @@ generatePaths n p = travel 0 []
 
     -- For conditions:
     travel c xs (CondNode g pt1 pt2) = do
+      -- TODO: We should be able to count how many paths are marked as unfeasible.
       -- We check the feasibility of path xs by calculating the wlp using g as postcond., AND using ¬g as pondcond.
       feasibleG <- isFeasible p g xs
       feasibleNegG <- isFeasible p (OpNeg g) xs
@@ -67,9 +68,6 @@ generatePaths n p = travel 0 []
         else return []
  
       return $ b1 ++ b2
-            
-
-     
 
 isFeasible :: Program -> Expr -> [Stmt] -> IO Bool
 -- Checks the feasibility of branch condition g, given program path xs.
