@@ -15,7 +15,7 @@ translate Skip q               = q                      -- wlp skip Q = Q
 translate (Assert e) q         = opAnd e q              -- wlp (assert e) Q = e /\ Q
 translate (Assume e) q         = opImplication e q      -- wlp (assume e) Q = e => Q
 translate (Assign var e) q     = substitute var e q     -- wlp (x:=e) Q = Q[e/x]
-translate (AAssign var i e) q  = undefined
+translate (AAssign var i e) q  = substituteArray var i e q
 translate (DrefAssign var e) q = undefined
 
 -- The rest should not appear in our generated path (for now).
@@ -33,6 +33,15 @@ substitute x e = Utils.apply helper
       helper q@(Var s)  | x == s    = e
                         | otherwise = q
       helper q          = q
+
+substituteArray :: String -> Expr -> Expr -> Expr -> Expr
+-- substituse array_name using repby
+substituteArray array_name index assigned_value = Utils.apply helper
+  where
+    helper :: Expr -> Expr
+    helper e@(Var var)  | var == array_name = RepBy e index assigned_value
+                        | otherwise = e
+    helper e = e
 
 simplify :: Expr -> Expr
 -- Simplifies out some common things in the resulting WLP.
@@ -85,13 +94,13 @@ simplify = Utils.apply helper
                                                 | otherwise = e
     helper e@(BinopExpr Equal e1 e2)            | e1 == e2  = LitB True
                                                 | otherwise = e
-    
+
     -- Non-recursive expressions (literals) in parentheses
     helper (Parens e@(Var _))         = e
     helper (Parens e@(LitI _))        = e
     helper (Parens e@(LitB _))        = e
     helper (Parens LitNull)           = LitNull
     helper (Parens e@(Dereference _)) = e
-    
+
     -- All else
     helper e = e
