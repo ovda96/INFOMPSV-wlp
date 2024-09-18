@@ -1,5 +1,7 @@
 -- | Parse.hs: Parses the supplied path, pretty prints the results and echoes them back to the console.
-module Parse (run) where
+module Parse (
+  run
+) where
 --
 import GCLUtils(parseGCLfile)
 import PathTree(generate, generatePaths)
@@ -21,6 +23,3 @@ run heuristics k path = do
 
   let wlps = map Wlp.calculate paths
   print wlps
-
-
-  

@@ -63,6 +63,7 @@ executable wlp-verifier
                     , PathTree
                     , Wlp
                     , Utils
+                    , InterfaceZ3
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

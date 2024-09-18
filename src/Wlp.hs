@@ -1,5 +1,7 @@
 module Wlp (
-  calculate
+  calculate,
+  simplify, 
+  translate
 ) where
 --
 import GCLParser.GCLDatatype

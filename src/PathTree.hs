@@ -7,6 +7,7 @@ module PathTree (
   ) where
 --
 import GCLParser.GCLDatatype
+import Wlp
 
 data PathTree = Node Stmt PathTree
               -- Cond(itional) Nodes contain the expression of the condition: if true, the left PathTree is evaluated; otherwise, the right one.
@@ -47,3 +48,17 @@ generatePaths n = travel 0 []
 
     -- For conditions, we traverse the path assuming the guard is true, and we traverse the alternative path assuming the guard is false.
     travel c xs (CondNode g pt1 pt2) = travel (c + 1) (xs ++ [Assume g]) pt1 ++ travel (c + 1) (xs ++ [Assume (OpNeg g)]) pt2
+      -- if isFeasible g then travel (c + 1) (xs ++ [Assume g]) pt1 ++ travel (c + 1) (xs ++ [Assume (OpNeg g)]) pt2
+      --                 else []
+
+isFeasible :: Expr -> [Stmt] -> Expr
+-- isFeasible :: Expr -> [Stmt] -> Bool
+-- Checks the feasibility of branch condition g, given program path xs.
+isFeasible g xs = simplify $ foldr helper g xs
+  where
+    helper :: Stmt -> Expr -> Expr
+    -- In feasibility checking, we replace assumes with assert (or, rather, its calculated wlp)...
+    helper (Assume e) acc = opAnd e acc
+    -- ... and we discard the pre-existing asserts
+    helper (Assert _) acc = acc
+    helper x acc          = translate x acc
