@@ -10,7 +10,6 @@ module InterfaceZ3 (
 import Z3.Monad
 import GCLParser.GCLDatatype
 import Control.Monad ( join )
-import Control.Applicative ( Applicative(liftA2) )
 import Data.Maybe ( fromJust )
 
 initialize :: Program -> [(String, Z3 AST)]
@@ -88,7 +87,7 @@ isValid :: Program -> Expr -> IO Bool
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
 isValid p e = do
   conclusion <- evalZ3 $ checker (generate p e)
-  return $ conclusion == Sat
+  return $ conclusion == Unsat -- Note: this should be unsat, and cost us 20 years to spot
   where
     checker :: Z3 AST -> Z3 Result
     checker ast = do
