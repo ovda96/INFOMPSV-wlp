@@ -38,7 +38,7 @@ generate p (OpNeg e)  = mkNot =<< generate p e
 
 -- Some shenanigans are needed to deal with monads/applicatives outside of do-blocks. Essentially,
 --    there are two possible patterns involved:
---    1) (i.e.) liftA2 mkGt (... e1) (... e2)
+--    1) (i.e.) mkGt <$> (... e1) <*> (... e2)
 --        do
 --            _e1 <- e1
 --            _e2 <- e2
@@ -51,16 +51,16 @@ generate p (OpNeg e)  = mkNot =<< generate p e
 --          mkAnd [e1, e2]
 generate p (BinopExpr And e1 e2)              = sequence [generate p e1, generate p e2] >>= mkAnd
 generate p (BinopExpr Or e1 e2)               = sequence [generate p e1, generate p e2] >>= mkOr
-generate p (BinopExpr Implication e1 e2)      = join (liftA2 mkImplies (generate p e1) (generate p e2))
-generate p (BinopExpr LessThan e1 e2)         = join (liftA2 mkLt (generate p e1) (generate p e2))
-generate p (BinopExpr LessThanEqual e1 e2)    = join (liftA2 mkLe (generate p e1) (generate p e2))
-generate p (BinopExpr GreaterThan e1 e2)      = join (liftA2 mkGt (generate p e1) (generate p e2))
-generate p (BinopExpr GreaterThanEqual e1 e2) = join (liftA2 mkGe (generate p e1) (generate p e2))
+generate p (BinopExpr Implication e1 e2)      = join (mkImplies <$> generate p e1 <*> generate p e2)
+generate p (BinopExpr LessThan e1 e2)         = join (mkLt <$> generate p e1 <*> generate p e2)
+generate p (BinopExpr LessThanEqual e1 e2)    = join (mkLe <$> generate p e1 <*> generate p e2)
+generate p (BinopExpr GreaterThan e1 e2)      = join (mkGt <$> generate p e1 <*> generate p e2)
+generate p (BinopExpr GreaterThanEqual e1 e2) = join (mkGe <$> generate p e1 <*> generate p e2)
 generate p (BinopExpr Minus e1 e2)            = sequence [generate p e1, generate p e2] >>= mkSub
 generate p (BinopExpr Plus e1 e2)             = sequence [generate p e1, generate p e2] >>= mkAdd
 generate p (BinopExpr Multiply e1 e2)         = sequence [generate p e1, generate p e2] >>= mkMul
-generate p (BinopExpr Divide e1 e2)           = join (liftA2 mkDiv (generate p e1) (generate p e2))
-generate p (BinopExpr Equal e1 e2)            = join (liftA2 mkEq (generate p e1) (generate p e2))
+generate p (BinopExpr Divide e1 e2)           = join (mkDiv <$> generate p e1 <*> generate p e2)
+generate p (BinopExpr Equal e1 e2)            = join (mkEq <$> generate p e1 <*> generate p e2)
 generate p exp@(BinopExpr Alias e1 e2)        = error $ "Unimplemented Z3 conversion from BinopExpr Alias: " ++ show exp
 
 generate p exp@(Forall s e) = error $ "Unimplemented Z3 conversion from Forall: " ++ show exp     -- TODO This definitely still needs to be done
