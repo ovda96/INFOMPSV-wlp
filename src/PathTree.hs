@@ -40,6 +40,7 @@ generatePaths :: Int -> Program -> PathTree -> IO [[Stmt]]
 -- Generates a list of program excecutions of max. length n.
 --    This unfortunately needs to be in an IO-block since we need to be able to evaluate the 
 --    feasibility of a path using Z3.
+-- TODO: The first path in the list is now usually quite long; maybe we could improve that.
 generatePaths n p = travel 0 []
   where
     travel :: Int -> [Stmt] -> PathTree -> IO [[Stmt]]

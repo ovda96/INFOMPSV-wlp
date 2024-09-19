@@ -7,7 +7,7 @@ import GCLUtils( parseGCLfile )
 import PathTree( generate, generatePaths )
 import Wlp( calculate )
 import Control.Monad ( when )
-import GCLParser.GCLDatatype ( Program, Expr )
+import GCLParser.GCLDatatype ( Program, Stmt )
 import InterfaceZ3 ( isValid )
 
 run :: Bool -> Int -> Bool -> String -> IO ()
@@ -23,27 +23,23 @@ run heur k v path = do
   when v $ print $ length paths
   when v $ print paths
 
-  -- 3) Calculate WLPs
-  let wlps = map Wlp.calculate paths
-  when v $ print "[WLPs]"
-  when v $ print wlps
-
-  -- 4) Validate WLPs of complete paths
-  result <- validate v prg wlps
+  -- 3) Validate complete paths
+  result <- validate v prg paths
   when result $ print "accept"
 
-validate :: Bool -> Program -> [Expr] -> IO Bool
--- Validates the supplied WLPs.
+validate :: Bool -> Program -> [[Stmt]] -> IO Bool
+-- Validates the supplied paths.
 validate _ _ []     = return True
 validate v p (x:xs) = do
-  when v $ print "[EVAL]"
-  when v $ print x
+  when v $ print ("[PATH] " ++ show x)
+  let wlp = Wlp.calculate x
+  when v $ print ("[WLP] " ++ show wlp)
 
-  valid <- isValid p x
+  valid <- isValid p wlp
   if valid
     then validate v p xs
     -- If we encounter a faulty path, we reject and print it
     else do
       print "reject"
-      print $ show x -- TODO: Should print path!
+      print $ show x
       return False
