@@ -62,8 +62,16 @@ generate p (BinopExpr Divide e1 e2)           = join (mkDiv <$> generate p e1 <*
 generate p (BinopExpr Equal e1 e2)            = join (mkEq <$> generate p e1 <*> generate p e2)
 generate p exp@(BinopExpr Alias e1 e2)        = error $ "Unimplemented Z3 conversion from BinopExpr Alias: " ++ show exp
 
-generate p exp@(Forall s e) = error $ "Unimplemented Z3 conversion from Forall: " ++ show exp     -- TODO This definitely still needs to be done
-generate p exp@(Exists s e) = error $ "Unimplemented Z3 conversion from Exists: " ++ show exp     -- TODO This definitely still needs to be done
+generate p (Forall s e) = do
+  expr <- generate p e
+  symbol <- mkStringSymbol s
+  sort <- mkIntSort
+  mkForall [] [symbol] [sort] expr
+generate p (Exists s e) = do
+  expr <- generate p e
+  symbol <- mkStringSymbol s
+  sort <- mkIntSort
+  mkExists [] [symbol] [sort] expr
 
 generate _ exp = error $ "Unimplemented Z3 conversion from Expr: " ++ show exp
 
