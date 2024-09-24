@@ -31,7 +31,7 @@ generate (Program { stmt })  = process Leaf stmt
     process pt (While g s)            = CondNode g (process pt (Seq s (While g s))) pt
 
     -- TODO
-    process pt e@(Block vd s)         = error $ "Unimplemented PathTree conversion from Stmt Block: " ++ show e
+    process pt (Block _ s)         = process pt s
     process pt e@(TryCatch msg s1 s2) = error $ "Unimplemented PathTree conversion from Stmt TryCatch: " ++ show e
 
     process pt s                      = Node s pt -- the rest

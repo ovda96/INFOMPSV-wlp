@@ -14,12 +14,22 @@ import Data.Maybe ( fromJust )
 
 initialize :: Program -> [(String, Z3 AST)]
 -- Generates a list of variable instantiations from the program spec.
-initialize (Program {input, output}) = map helper (input ++ output)
+initialize (Program {input, output, stmt}) = map helper (input ++ output ++ blockDeclarations stmt)
   where 
     helper :: VarDeclaration -> (String, Z3 AST)
     helper (VarDeclaration s (PType PTInt))   = (s, mkIntVar =<< mkStringSymbol s)
     helper (VarDeclaration s (PType PTBool))  = (s, mkBoolVar =<< mkStringSymbol s)
     helper decl                               = error $ "Unimplemented VarDeclaration " ++ show decl
+
+-- TODO: currently this is treating block declarations as global variables,
+-- this wrong but easier this way
+blockDeclarations :: Stmt -> [VarDeclaration]
+blockDeclarations (Seq s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
+blockDeclarations (IfThenElse _ s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
+blockDeclarations (While _ s1) = blockDeclarations s1
+blockDeclarations (Block ds s1) = ds ++ blockDeclarations s1
+blockDeclarations (TryCatch _ s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
+blockDeclarations _ = []
 
 generate :: Program -> Expr -> Z3 AST
 -- Turns an expression into a Z3 AST.
