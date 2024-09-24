@@ -38,7 +38,7 @@ generate p (Var s)    = fromJust $ lookup s vars
   --    correct type.(*)
   where 
     vars :: [(String, Z3 AST)]
-    vars = initialize p
+    vars = initialize p -- TODO: this is inefficient as this list is the same every time but gets calculated every time
 
 generate _ (LitI i)   = mkIntNum i
 generate _ (LitB b)   = if b then mkTrue else mkFalse
@@ -83,6 +83,9 @@ generate p (Exists s e) = do
   sort <- mkIntSort
   mkExists [] [symbol] [sort] expr
 
+-- TODO
+generate _ exp@(RepBy var i val) = error $ "Unimplemented Z3 conversion from repby expr: " ++ show exp
+generate _ exp@(ArrayElem var i) = error $ "Unimplemented Z3 conversion from repby expr: " ++ show exp
 generate _ exp = error $ "Unimplemented Z3 conversion from Expr: " ++ show exp
 
 isSatisfiable :: Program -> Expr -> IO Bool
