@@ -10,12 +10,13 @@ module InterfaceZ3 (
 import Z3.Monad
 import GCLParser.GCLDatatype
 import Control.Monad ( join )
-import Data.Maybe ( fromJust )
+import Data.Maybe
+import qualified Data.Map as Map
 
-initialize :: Program -> [(String, Z3 AST)]
+initialize :: Program -> Map.Map String (Z3 AST)
 -- Generates a list of variable instantiations from the program spec.
-initialize (Program {input, output, stmt}) = map helper (input ++ output ++ blockDeclarations stmt)
-  where 
+initialize (Program {input, output, stmt}) = Map.fromList $ map helper (input ++ output ++ blockDeclarations stmt)
+  where
     helper :: VarDeclaration -> (String, Z3 AST)
     helper (VarDeclaration s (PType PTInt))   = (s, mkIntVar =<< mkStringSymbol s)
     helper (VarDeclaration s (PType PTBool))  = (s, mkBoolVar =<< mkStringSymbol s)
@@ -31,19 +32,13 @@ blockDeclarations (Block ds s1) = ds ++ blockDeclarations s1
 blockDeclarations (TryCatch _ s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
 blockDeclarations _ = []
 
-generate :: Program -> Expr -> Z3 AST
+generate :: Map.Map String (Z3 AST) -> Expr -> Z3 AST
 -- Turns an expression into a Z3 AST.
-generate p (Var s)    = fromJust $ lookup s vars
-  -- In case of a variable, we look up the instantiation in our list to make sure we are using the
-  --    correct type.(*)
-  where 
-    vars :: [(String, Z3 AST)]
-    vars = initialize p -- TODO: this is inefficient as this list is the same every time but gets calculated every time
-
-generate _ (LitI i)   = mkIntNum i
-generate _ (LitB b)   = if b then mkTrue else mkFalse
-generate p (Parens e) = generate p e
-generate p (OpNeg e)  = mkNot =<< generate p e
+generate env (Var s)    = fromJust $ Map.lookup s env -- Lookup variable in environment
+generate _ (LitI i)     = mkIntNum i
+generate _ (LitB b)     = if b then mkTrue else mkFalse
+generate env (Parens e) = generate env e
+generate env (OpNeg e)  = mkNot =<< generate env e
 
 -- Some shenanigans are needed to deal with monads/applicatives outside of do-blocks. Essentially,
 --    there are two possible patterns involved:
@@ -58,41 +53,46 @@ generate p (OpNeg e)  = mkNot =<< generate p e
 --          _e1 <- e1
 --          _e2 <- e2
 --          mkAnd [e1, e2]
-generate p (BinopExpr And e1 e2)              = sequence [generate p e1, generate p e2] >>= mkAnd
-generate p (BinopExpr Or e1 e2)               = sequence [generate p e1, generate p e2] >>= mkOr
-generate p (BinopExpr Implication e1 e2)      = join (mkImplies <$> generate p e1 <*> generate p e2)
-generate p (BinopExpr LessThan e1 e2)         = join (mkLt <$> generate p e1 <*> generate p e2)
-generate p (BinopExpr LessThanEqual e1 e2)    = join (mkLe <$> generate p e1 <*> generate p e2)
-generate p (BinopExpr GreaterThan e1 e2)      = join (mkGt <$> generate p e1 <*> generate p e2)
-generate p (BinopExpr GreaterThanEqual e1 e2) = join (mkGe <$> generate p e1 <*> generate p e2)
-generate p (BinopExpr Minus e1 e2)            = sequence [generate p e1, generate p e2] >>= mkSub
-generate p (BinopExpr Plus e1 e2)             = sequence [generate p e1, generate p e2] >>= mkAdd
-generate p (BinopExpr Multiply e1 e2)         = sequence [generate p e1, generate p e2] >>= mkMul
-generate p (BinopExpr Divide e1 e2)           = join (mkDiv <$> generate p e1 <*> generate p e2)
-generate p (BinopExpr Equal e1 e2)            = join (mkEq <$> generate p e1 <*> generate p e2)
-generate p exp@(BinopExpr Alias e1 e2)        = error $ "Unimplemented Z3 conversion from BinopExpr Alias: " ++ show exp
+generate env (BinopExpr And e1 e2)              = sequence [generate env e1, generate env e2] >>= mkAnd
+generate env (BinopExpr Or e1 e2)               = sequence [generate env e1, generate env e2] >>= mkOr
+generate env (BinopExpr Implication e1 e2)      = join (mkImplies <$> generate env e1 <*> generate env e2)
+generate env (BinopExpr LessThan e1 e2)         = join (mkLt <$> generate env e1 <*> generate env e2)
+generate env (BinopExpr LessThanEqual e1 e2)    = join (mkLe <$> generate env e1 <*> generate env e2)
+generate env (BinopExpr GreaterThan e1 e2)      = join (mkGt <$> generate env e1 <*> generate env e2)
+generate env (BinopExpr GreaterThanEqual e1 e2) = join (mkGe <$> generate env e1 <*> generate env e2)
+generate env (BinopExpr Minus e1 e2)            = sequence [generate env e1, generate env e2] >>= mkSub
+generate env (BinopExpr Plus e1 e2)             = sequence [generate env e1, generate env e2] >>= mkAdd
+generate env (BinopExpr Multiply e1 e2)         = sequence [generate env e1, generate env e2] >>= mkMul
+generate env (BinopExpr Divide e1 e2)           = join (mkDiv <$> generate env e1 <*> generate env e2)
+generate env (BinopExpr Equal e1 e2)            = join (mkEq <$> generate env e1 <*> generate env e2)
+generate env expr@(BinopExpr Alias e1 e2)       = error $ "Unimplemented Z3 conversion from BinopExpr Alias: " ++ show expr
 
-generate p (Forall s e) = do
-  expr <- generate p e
-  symbol <- mkStringSymbol s
-  sort <- mkIntSort
-  mkForall [] [symbol] [sort] expr
-generate p (Exists s e) = do
-  expr <- generate p e
-  symbol <- mkStringSymbol s
-  sort <- mkIntSort
-  mkExists [] [symbol] [sort] expr
+generate env (Forall s e) = do
+  quantified_var <- mkStringSymbol s >>= mkIntVar
+  let env' = Map.insert s (return quantified_var) env
+  expr <- generate env' e
+  app <- toApp quantified_var
+  mkForallConst [] [app] expr
+generate env (Exists s e) = do
+  quantified_var <- mkStringSymbol s >>= mkIntVar
+  let env' = Map.insert s (return quantified_var) env
+  expr <- generate env' e
+  app <- toApp quantified_var
+  mkExistsConst [] [app] expr
 
 -- TODO
-generate _ exp@(RepBy var i val) = error $ "Unimplemented Z3 conversion from repby expr: " ++ show exp
-generate _ exp@(ArrayElem var i) = error $ "Unimplemented Z3 conversion from repby expr: " ++ show exp
-generate _ exp = error $ "Unimplemented Z3 conversion from Expr: " ++ show exp
+generate _ expr@(RepBy var i val) = error $ "Unimplemented Z3 conversion from repby expr: " ++ show expr
+generate _ expr@(ArrayElem var i) = error $ "Unimplemented Z3 conversion from arrayelem expr: " ++ show expr
+generate _ expr = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
+
+createZ3AST :: Program -> Expr -> Z3 AST
+createZ3AST p = generate (initialize p)
 
 isSatisfiable :: Program -> Expr -> IO Bool
 -- Checks whether an expression is satisfiable.
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
 isSatisfiable p e = do
-  conclusion <- evalZ3 $ checker (generate p e)
+  conclusion <- evalZ3 $ checker $ createZ3AST p e
   return $ conclusion == Sat
   where
     checker :: Z3 AST -> Z3 Result
@@ -107,14 +107,19 @@ isValid :: Program -> Expr -> IO Bool
 -- Checks whether an expression is valid.
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
 isValid p e = do
-  conclusion <- evalZ3 $ checker (generate p e)
+  let ast = createZ3AST p e
+  (conclusion, model) <- evalZ3 $ checker ast
+
+  -- print generated z3 AST
+  evalZ3 (ast >>= astToString) >>= putStrLn
+  -- print model if model was found
+  maybe mempty (\m -> evalZ3 (modelToString m) >>= putStrLn) model
+
   return $ conclusion == Unsat -- Note: this should be unsat, and cost us 20 years to spot
   where
-    checker :: Z3 AST -> Z3 Result
+    checker :: Z3 AST -> Z3 (Result, Maybe Model)
     checker ast = do
       _ast <- ast
       f <- mkNot _ast
       assert f
-      (verdict, _) <- getModel
-      return verdict
-  
+      getModel
