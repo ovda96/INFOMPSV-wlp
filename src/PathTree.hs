@@ -36,39 +36,39 @@ generate (Program { stmt })  = process Leaf stmt
 
     process pt s                      = Node s pt -- the rest
 
-generatePaths :: Int -> Program -> PathTree -> IO [[Stmt]]
+generatePaths :: Int -> Program -> PathTree -> IO ([[Stmt]],Int)
 -- Generates a list of program excecutions of max. length n.
 --    This unfortunately needs to be in an IO-block since we need to be able to evaluate the 
 --    feasibility of a path using Z3.
 -- TODO: The first path in the list is now usually quite long; maybe we could improve that.
 generatePaths n p = travel 0 []
   where
-    travel :: Int -> [Stmt] -> PathTree -> IO [[Stmt]]
-    travel _ xs Leaf           = return [xs]
+    travel :: Int -> [Stmt] -> PathTree -> IO ([[Stmt]],Int)
+    travel _ xs Leaf           = return ([xs],0)
 
     travel c xs (Node stmt pt)  | c < n     = travel (c + 1) (xs ++ [stmt]) pt
                                 -- If we have reached the max. path length but the tree hasn't been traversed correctly,
                                 --    discard the entire path.
-                                | otherwise = return []
+                                | otherwise = return ([],0)
 
     -- For conditions:
     travel c xs (CondNode g pt1 pt2) = do
-      -- TODO: We should be able to count how many paths are marked as unfeasible.
+      -- DONE: We should be able to count how many paths are marked as unfeasible.
       -- We check the feasibility of path xs by calculating the wlp using g as postcond., AND using ¬g as pondcond.
       feasibleG <- isFeasible p g xs
       feasibleNegG <- isFeasible p (OpNeg g) xs
 
-      b1 <- if feasibleG
+      (b1, unfeas1) <- if feasibleG
         -- If path to g is feasible, we explore; else discard.
         then travel (c + 1) (xs ++ [Assume g]) pt1
-        else return []
+        else return ([],1)
       
-      b2 <- if feasibleNegG
+      (b2, unfeas2) <- if feasibleNegG
         -- If path to ¬g is feasible, we explore; else discard.
         then travel (c + 1) (xs ++ [Assume (OpNeg g)]) pt2
-        else return []
+        else return ([],1)
  
-      return $ b1 ++ b2
+      return (b1 ++ b2, unfeas1 + unfeas2)
 
 isFeasible :: Program -> Expr -> [Stmt] -> IO Bool
 -- Checks the feasibility of branch condition g, given program path xs.
