@@ -73,6 +73,7 @@ executable wlp-verifier
                     , GCLparser
                     , options
                     , containers
+                    , timeit
 
     -- Directories containing source files.
     hs-source-dirs:   src

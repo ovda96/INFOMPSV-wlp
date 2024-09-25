@@ -5,6 +5,7 @@ module Main (main) where
 -- 
 import Options
 import Parse (run)
+import System.TimeIt
 
 -- Option/arg parsing
 data MainOptions = MainOptions
@@ -16,8 +17,8 @@ data MainOptions = MainOptions
 instance Options MainOptions where
   defineOptions :: DefineOptions MainOptions
   defineOptions = MainOptions
-    <$> simpleOption "heuristics" False
-          "Turn on heuristics"
+    <$> simpleOption "noHeuristics" False
+          "Disable heuristics"
     <*> simpleOption "length" 0     -- TODO Seems a silly default value
           "The inclusive maximum path length to be evaluated"
     <*> simpleOption "verbose" False
@@ -34,4 +35,4 @@ main = runCommand process
     process _ []          = putStrLn "Please provide path to .gcl-file"
     
     -- Note that we only parse the first supplied file path.
-    process opts (p : _)  = Parse.run (optHeuristics opts) (optLength opts) (optVerbose opts) p
+    process opts (p : _)  = timeIt $ Parse.run (optHeuristics opts) (optLength opts) (optVerbose opts) p

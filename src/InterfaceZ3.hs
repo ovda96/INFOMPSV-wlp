@@ -40,7 +40,7 @@ generate _ (LitB b)     = if b then mkTrue else mkFalse
 generate env (Parens e) = generate env e
 generate env (OpNeg e)  = mkNot =<< generate env e
 
--- Some shenanigans are needed to deal with monads/applicatives outside of do-blocks. Essentially,
+-- Some shenanigans are needed to deal with monads/applicatives outside of do-blocks (although we could have just used them, oops). Essentially,
 --    there are two possible patterns involved:
 --    1) (i.e.) mkGt <$> (... e1) <*> (... e2)
 --        do
@@ -101,7 +101,6 @@ isSatisfiable p e = do
       assert _ast
       (verdict, _) <- getModel
       return verdict
-
 
 isValid :: Program -> Expr -> IO Bool
 -- Checks whether an expression is valid.
