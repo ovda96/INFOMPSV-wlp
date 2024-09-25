@@ -1,0 +1,6 @@
+block(a:int | b:int) {
+  var i:int {
+    assert forall i :: i + 1 > i;
+    assert exists i :: i > 7
+  }
+}

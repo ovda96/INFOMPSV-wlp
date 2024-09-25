@@ -14,12 +14,22 @@ import Data.Maybe ( fromJust )
 
 initialize :: Program -> [(String, Z3 AST)]
 -- Generates a list of variable instantiations from the program spec.
-initialize (Program {input, output}) = map helper (input ++ output)
+initialize (Program {input, output, stmt}) = map helper (input ++ output ++ blockDeclarations stmt)
   where 
     helper :: VarDeclaration -> (String, Z3 AST)
     helper (VarDeclaration s (PType PTInt))   = (s, mkIntVar =<< mkStringSymbol s)
     helper (VarDeclaration s (PType PTBool))  = (s, mkBoolVar =<< mkStringSymbol s)
     helper decl                               = error $ "Unimplemented VarDeclaration " ++ show decl
+
+-- TODO: currently this is treating block declarations as global variables,
+-- this wrong but easier this way
+blockDeclarations :: Stmt -> [VarDeclaration]
+blockDeclarations (Seq s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
+blockDeclarations (IfThenElse _ s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
+blockDeclarations (While _ s1) = blockDeclarations s1
+blockDeclarations (Block ds s1) = ds ++ blockDeclarations s1
+blockDeclarations (TryCatch _ s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
+blockDeclarations _ = []
 
 generate :: Program -> Expr -> Z3 AST
 -- Turns an expression into a Z3 AST.
@@ -28,7 +38,7 @@ generate p (Var s)    = fromJust $ lookup s vars
   --    correct type.(*)
   where 
     vars :: [(String, Z3 AST)]
-    vars = initialize p
+    vars = initialize p -- TODO: this is inefficient as this list is the same every time but gets calculated every time
 
 generate _ (LitI i)   = mkIntNum i
 generate _ (LitB b)   = if b then mkTrue else mkFalse
@@ -73,6 +83,9 @@ generate p (Exists s e) = do
   sort <- mkIntSort
   mkExists [] [symbol] [sort] expr
 
+-- TODO
+generate _ exp@(RepBy var i val) = error $ "Unimplemented Z3 conversion from repby expr: " ++ show exp
+generate _ exp@(ArrayElem var i) = error $ "Unimplemented Z3 conversion from repby expr: " ++ show exp
 generate _ exp = error $ "Unimplemented Z3 conversion from Expr: " ++ show exp
 
 isSatisfiable :: Program -> Expr -> IO Bool
