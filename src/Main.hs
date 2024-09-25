@@ -5,6 +5,7 @@ module Main (main) where
 -- 
 import Options
 import Parse (run)
+import System.TimeIt
 
 -- Option/arg parsing
 data MainOptions = MainOptions
@@ -34,4 +35,4 @@ main = runCommand process
     process _ []          = putStrLn "Please provide path to .gcl-file"
     
     -- Note that we only parse the first supplied file path.
-    process opts (p : _)  = Parse.run (optHeuristics opts) (optLength opts) (optVerbose opts) p
+    process opts (p : _)  = timeIt $ Parse.run (optHeuristics opts) (optLength opts) (optVerbose opts) p

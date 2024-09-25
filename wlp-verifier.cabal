@@ -72,6 +72,7 @@ executable wlp-verifier
                     , z3
                     , GCLparser
                     , options
+                    , timeit
 
     -- Directories containing source files.
     hs-source-dirs:   src

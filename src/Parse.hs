@@ -9,6 +9,7 @@ import Wlp( calculate )
 import Control.Monad ( when, unless )
 import GCLParser.GCLDatatype ( Program, Stmt )
 import InterfaceZ3 ( isValid )
+import Data.List (sortOn)
 
 run :: Bool -> Int -> Bool -> String -> IO ()
 run noHeur k v path = do
@@ -21,14 +22,25 @@ run noHeur k v path = do
   (paths, noPruned) <- PathTree.generatePaths noHeur k prg tree
   print ("[INFO] No. paths generated: " ++ show (length paths))
 
-  when v $ print "[PATHS]"
-  when v $ print paths
+  -- We sort on the path lengths to make evaluate the paths from shortest -> longest, which improves performance for large k's significantly.
+  --   I.e., on my machine: test.gcl, k = 2000, without pruning
+  --        With sorting: 0.17s
+  --        Without sorting: 16.48s
+  --   and: test.gcl, k = 500, with pruning
+  --        With sorting: 24.80s
+  --        Without sorting: 24.92s
+  --   Since pruning is expensive (for now, since we need to call z3 a lot), the difference is significantly less visible. Pruning also tends
+  --      to eliminate quite a number of long paths, which further decreases the impact of the sorting.
+  let sortedPaths = sortOn length paths
 
-  -- We print the number of pruned branches unless heuristics was turned off (since we didn't prune anything if that was the case)
+  when v $ print "[PATHS]"
+  when v $ print sortedPaths
+
+  -- We print the number of pruned branches unless heuristics was turned off (since we didn't prune anything if that was the case).
   unless noHeur $ print ("[INFO] No. branches pruned: " ++ show noPruned)
 
   -- 3) Validate complete paths
-  result <- validate v prg paths
+  result <- validate v prg sortedPaths
   when result $ print "accept"
 
 validate :: Bool -> Program -> [[Stmt]] -> IO Bool

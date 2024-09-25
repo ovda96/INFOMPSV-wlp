@@ -39,7 +39,6 @@ generatePaths :: Bool -> Int -> Program -> PathTree -> IO ([[Stmt]],Int)
 -- Generates a list of program excecutions of max. length n.
 --    This unfortunately needs to be in an IO-block since we need to be able to evaluate the 
 --    feasibility of a path using Z3.
--- TODO: The first path in the list is now usually quite long; maybe we could improve that.
 generatePaths noHeur n p = travel 0 []
   where
     travel :: Int -> [Stmt] -> PathTree -> IO ([[Stmt]],Int)
@@ -71,6 +70,7 @@ generatePaths noHeur n p = travel 0 []
 
 isFeasible :: Program -> Expr -> [Stmt] -> IO Bool
 -- Checks the feasibility of branch condition g, given program path xs.
+-- TODO: Optimize performance, prevent many z3 calls.
 isFeasible p g xs = isSatisfiable p calculateWlp
   where
     calculateWlp :: Expr
