@@ -45,7 +45,7 @@ generate _ (LitB b)   = if b then mkTrue else mkFalse
 generate p (Parens e) = generate p e
 generate p (OpNeg e)  = mkNot =<< generate p e
 
--- Some shenanigans are needed to deal with monads/applicatives outside of do-blocks. Essentially,
+-- Some shenanigans are needed to deal with monads/applicatives outside of do-blocks (although we could have just used them, oops). Essentially,
 --    there are two possible patterns involved:
 --    1) (i.e.) mkGt <$> (... e1) <*> (... e2)
 --        do
@@ -77,6 +77,7 @@ generate p (Forall s e) = do
   symbol <- mkStringSymbol s
   sort <- mkIntSort
   mkForall [] [symbol] [sort] expr
+
 generate p (Exists s e) = do
   expr <- generate p e
   symbol <- mkStringSymbol s
@@ -101,7 +102,6 @@ isSatisfiable p e = do
       assert _ast
       (verdict, _) <- getModel
       return verdict
-
 
 isValid :: Program -> Expr -> IO Bool
 -- Checks whether an expression is valid.

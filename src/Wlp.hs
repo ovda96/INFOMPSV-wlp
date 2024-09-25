@@ -40,10 +40,10 @@ substitute x e = Utils.apply helper
 
 substituteArray :: String -> Expr -> Expr -> Expr -> Expr
 -- Substitutes array_name using repby
-substituteArray array_name index assigned_value = Utils.apply helper
+substituteArray arrayName index assignedValue = Utils.apply helper
   where
     helper :: Expr -> Expr
-    helper e@(Var var)  | var == array_name = RepBy e index assigned_value
+    helper e@(Var var)  | var == arrayName  = RepBy e index assignedValue
                         | otherwise         = e
     helper e            = e
 
