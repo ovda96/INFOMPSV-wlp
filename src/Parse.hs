@@ -6,28 +6,29 @@ module Parse (
 import GCLUtils( parseGCLfile )
 import PathTree( generate, generatePaths )
 import Wlp( calculate )
-import Control.Monad ( when )
+import Control.Monad ( when, unless )
 import GCLParser.GCLDatatype ( Program, Stmt )
 import InterfaceZ3 ( isValid )
 
 run :: Bool -> Int -> Bool -> String -> IO ()
-run heur k v path = do
+run noHeur k v path = do
   -- 1) Parse file...
   gcl <- parseGCLfile path
   let (Right prg) = gcl
   
   -- 2) Construct tree and valid paths of max.length k
   let tree = PathTree.generate prg
-  paths <- PathTree.generatePaths k prg tree
+  (paths, noPruned) <- PathTree.generatePaths noHeur k prg tree
+  print ("[INFO] No. paths generated: " ++ show (length paths))
+
   when v $ print "[PATHS]"
-  when v $ print $ length paths
   when v $ print paths
 
-  let (feasiblePaths, noPruned) = paths  
-  print $ "No. branches pruned: " ++ show noPruned
+  -- We print the number of pruned branches unless heuristics was turned off (since we didn't prune anything if that was the case)
+  unless noHeur $ print ("[INFO] No. branches pruned: " ++ show noPruned)
 
   -- 3) Validate complete paths
-  result <- validate v prg feasiblePaths
+  result <- validate v prg paths
   when result $ print "accept"
 
 validate :: Bool -> Program -> [[Stmt]] -> IO Bool

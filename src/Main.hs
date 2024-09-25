@@ -16,8 +16,8 @@ data MainOptions = MainOptions
 instance Options MainOptions where
   defineOptions :: DefineOptions MainOptions
   defineOptions = MainOptions
-    <$> simpleOption "heuristics" False
-          "Turn on heuristics"
+    <$> simpleOption "noHeuristics" False
+          "Disable heuristics"
     <*> simpleOption "length" 0     -- TODO Seems a silly default value
           "The inclusive maximum path length to be evaluated"
     <*> simpleOption "verbose" False
