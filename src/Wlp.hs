@@ -69,34 +69,50 @@ simplify = Utils.apply helper
       -- (¬(p => p) == False
       -- p => ¬p == False
       -- ¬p => p == False
-    helper e@(BinopExpr Implication e1 e2)        | e1 == e2  = LitB True
-                                                  | otherwise = e
-    helper e@(OpNeg(BinopExpr Implication e1 e2)) | e1 == e2  = LitB False
-                                                  | otherwise = e
-    helper e@((BinopExpr Implication e1 e2))      | e1 == OpNeg e2 = LitB False
-                                                  | OpNeg e1 == e2 = LitB False   -- Redundant?
-                                                  | otherwise = e
+    helper e@(BinopExpr Implication e1 e2)            | e1 == e2  = LitB True
+                                                      | otherwise = e
+    helper e@(OpNeg(BinopExpr Implication e1 e2))     | e1 == e2  = LitB False
+                                                      | otherwise = e
+    helper e@((BinopExpr Implication e1 (OpNeg e2)))  | e1 == e2  = LitB False
+                                                      | otherwise = e
+    helper e@((BinopExpr Implication (OpNeg e1) e2))  | e1 == e2  = LitB False
+                                                      | otherwise = e
 
     -- False self-comparisons
       -- x < x == False
       -- x > x == False
       -- ¬(x == x) == False
+      -- x == ¬x == False
+      -- ¬x == x == False
     helper e@(BinopExpr LessThan e1 e2)       | e1 == e2  = LitB False
                                               | otherwise = e
     helper e@(BinopExpr GreaterThan e1 e2)    | e1 == e2  = LitB False
                                               | otherwise = e
     helper e@(OpNeg(BinopExpr Equal e1 e2))   | e1 == e2  = LitB False
                                               | otherwise = e
+    helper e@(BinopExpr Equal e1 (OpNeg e2))  | e1 == e2  = LitB False
+                                              | otherwise = e
+    helper e@(BinopExpr Equal (OpNeg e1) e2)  | e1 == e2  = LitB False
+                                              | otherwise = e
 
     -- True self-comparisons
       -- x =< x == True
       -- x >= x == True
       -- x == x == True
+      -- x || ¬x == True
+      -- ¬x || x == True
+      -- x && x == True
     helper e@(BinopExpr LessThanEqual e1 e2)    | e1 == e2  = LitB True
                                                 | otherwise = e
     helper e@(BinopExpr GreaterThanEqual e1 e2) | e1 == e2  = LitB True
                                                 | otherwise = e
     helper e@(BinopExpr Equal e1 e2)            | e1 == e2  = LitB True
+                                                | otherwise = e
+    helper e@(BinopExpr Or e1 (OpNeg e2))       | e1 == e2  = LitB True
+                                                | otherwise = e
+    helper e@(BinopExpr Or (OpNeg e1) e2)       | e1 == e2  = LitB True
+                                                | otherwise = e
+    helper e@(BinopExpr And e1 e2)              | e1 == e2  = LitB True
                                                 | otherwise = e
 
     -- Non-recursive expressions (literals) in parentheses

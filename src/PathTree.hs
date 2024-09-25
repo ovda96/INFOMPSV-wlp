@@ -71,7 +71,10 @@ generatePaths noHeur n p = travel 0 []
 isFeasible :: Program -> Expr -> [Stmt] -> IO Bool
 -- Checks the feasibility of branch condition g, given program path xs.
 -- TODO: Optimize performance, prevent many z3 calls.
-isFeasible p g xs = isSatisfiable p calculateWlp
+isFeasible p g xs = do -- TODO revert
+  let wlp = calculateWlp
+  print wlp
+  isSatisfiable p calculateWlp
   where
     calculateWlp :: Expr
     -- Calculates the wlp of all statements so far in path, with g as postcondition.
