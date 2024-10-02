@@ -18,9 +18,19 @@ initialize :: Program -> Map.Map String (Z3 AST)
 initialize (Program {input, output, stmt}) = Map.fromList $ map helper (input ++ output ++ blockDeclarations stmt)
   where
     helper :: VarDeclaration -> (String, Z3 AST)
-    helper (VarDeclaration s (PType PTInt))   = (s, mkIntVar =<< mkStringSymbol s)
-    helper (VarDeclaration s (PType PTBool))  = (s, mkBoolVar =<< mkStringSymbol s)
-    helper decl                               = error $ "Unimplemented VarDeclaration " ++ show decl
+    helper (VarDeclaration s t)   = (s, do
+      sort <- createSort t
+      symbol <- mkStringSymbol s
+      mkVar symbol sort)
+
+    createSort :: Type -> Z3 Sort
+    createSort (AType t) = do
+      int_sort <- mkIntSort
+      t_sort <- createSort $ PType t
+      mkArraySort int_sort t_sort
+    createSort (PType PTInt) = mkIntSort
+    createSort (PType PTBool) = mkIntSort
+    createSort t = error $ "Unimplemented type conversion to z3" ++ show t
 
 -- TODO: currently this is treating block declarations as global variables,
 -- this wrong but easier this way
@@ -80,9 +90,12 @@ generate env (Exists s e) = do
   app <- toApp quantified_var
   mkExistsConst [] [app] expr
 
+-- Though i needed this voor array stuff but ended up using repby instead
+generate env (Cond cond t f) = join $ mkIte <$> generate env cond <*> generate env t <*> generate env f
+generate env (RepBy var i val) = join $ mkStore <$> generate env var <*> generate env i <*> generate env val
+generate env (ArrayElem var i) = join $ mkSelect <$> generate env var <*> generate env i
 -- TODO
-generate _ expr@(RepBy var i val) = error $ "Unimplemented Z3 conversion from repby expr: " ++ show expr
-generate _ expr@(ArrayElem var i) = error $ "Unimplemented Z3 conversion from arrayelem expr: " ++ show expr
+generate env expr@(SizeOf v) = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
 generate _ expr = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
 
 createZ3AST :: Program -> Expr -> Z3 AST
