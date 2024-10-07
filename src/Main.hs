@@ -5,7 +5,7 @@ module Main (main) where
 -- 
 import Options
 import Parse (run)
-import System.TimeIt
+import System.TimeIt ( timeIt )
 
 -- Option/arg parsing
 data MainOptions = MainOptions
@@ -19,7 +19,7 @@ instance Options MainOptions where
   defineOptions = MainOptions
     <$> simpleOption "noHeuristics" False
           "Disable heuristics"
-    <*> simpleOption "length" 0     -- TODO Seems a silly default value
+    <*> simpleOption "length" 0     -- TODO: Seems a silly default value.
           "The inclusive maximum path length to be evaluated"
     <*> simpleOption "verbose" False
           "Turn on detailed information printing"
