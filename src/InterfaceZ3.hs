@@ -128,9 +128,9 @@ isValid p e = do
   (conclusion, model) <- evalZ3 $ checker ast
 
   -- print generated z3 AST
-  evalZ3 (ast >>= astToString) >>= putStrLn
+  --evalZ3 (ast >>= astToString) >>= putStrLn
   -- print model if model was found
-  maybe mempty (\m -> evalZ3 (modelToString m) >>= putStrLn) model
+  --maybe mempty (\m -> evalZ3 (modelToString m) >>= putStrLn) model
 
   return $ conclusion == Unsat -- Note: this should be unsat, and cost us 20 years to spot
   where
