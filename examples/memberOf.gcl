@@ -1,4 +1,5 @@
-memberOf(x:int, a:[]int | found:bool) {
+memberOf(x:int, a:[]int, N:int | found:bool) {
+  N := 4;
   // N is an experiment parameter
   assume #a>=N  // note the ">="
          && #a>=0
@@ -11,5 +12,5 @@ memberOf(x:int, a:[]int | found:bool) {
       k := k+1
     }
   } ;
-  assert found && k>=0 && k==#a && k>=N
+  assert found && k>=0 && k=#a && k>=N
 }

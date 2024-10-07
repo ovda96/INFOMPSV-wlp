@@ -15,13 +15,26 @@ import qualified Data.Map as Map
 
 initialize :: Program -> Map.Map String (Z3 AST)
 -- Generates a list of variable instantiations from the program spec.
-initialize (Program {input, output, stmt}) = Map.fromList $ map helper (input ++ output ++ blockDeclarations stmt)
+initialize (Program {input, output, stmt}) = Map.fromList $ concatMap helper (input ++ output ++ blockDeclarations stmt)
   where
-    helper :: VarDeclaration -> (String, Z3 AST)
-    helper (VarDeclaration s t)   = (s, do
-      sort <- createSort t
-      symbol <- mkStringSymbol s
-      mkVar symbol sort)
+    -- type is list because array creates two variables: the length and the
+    -- array itself
+    helper :: VarDeclaration -> [(String, Z3 AST)]
+    helper (VarDeclaration s t@(AType pt)) =
+      ( s,
+          do
+            sort <- createSort t
+            symbol <- mkStringSymbol s
+            mkVar symbol sort
+        ) : helper (VarDeclaration ('#' : s) (PType pt))
+    helper (VarDeclaration s t) =
+      [ ( s,
+          do
+            sort <- createSort t
+            symbol <- mkStringSymbol s
+            mkVar symbol sort
+        )
+      ]
 
     createSort :: Type -> Z3 Sort
     createSort (AType t) = do
@@ -90,13 +103,18 @@ generate env (Exists s e) = do
   app <- toApp quantified_var
   mkExistsConst [] [app] expr
 
--- Though i needed this voor array stuff but ended up using repby instead
+-- Thought i needed cond for array stuff but ended up using repby instead
 generate env (Cond cond t f) = join $ mkIte <$> generate env cond <*> generate env t <*> generate env f
 generate env (RepBy var i val) = join $ mkStore <$> generate env var <*> generate env i <*> generate env val
 generate env (ArrayElem var i) = join $ mkSelect <$> generate env var <*> generate env i
--- TODO
-generate env expr@(SizeOf v) = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
+generate env (SizeOf v) = fromJust $ Map.lookup ('#':fromJust (getArrayName v)) env
 generate _ expr = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
+
+-- function to get the name of an array out of an repby expression
+getArrayName :: Expr -> Maybe String
+getArrayName (RepBy e1 _ _) = getArrayName e1
+getArrayName (Var e) = Just e
+getArrayName _ = Nothing
 
 createZ3AST :: Program -> Expr -> Z3 AST
 createZ3AST p = generate (initialize p)
