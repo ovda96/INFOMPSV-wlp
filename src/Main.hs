@@ -5,7 +5,7 @@ module Main (main) where
 -- 
 import Options
 import Parse (run)
-import System.TimeIt
+import System.TimeIt ( timeIt )
 
 -- Option/arg parsing
 data MainOptions = MainOptions

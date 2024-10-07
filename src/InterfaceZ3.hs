@@ -10,7 +10,7 @@ module InterfaceZ3 (
 import Z3.Monad
 import GCLParser.GCLDatatype
 import Control.Monad ( join )
-import Data.Maybe
+import Data.Maybe ( fromJust )
 import qualified Data.Map as Map
 
 initialize :: Program -> Map.Map String (Z3 AST)
@@ -18,29 +18,31 @@ initialize :: Program -> Map.Map String (Z3 AST)
 initialize (Program {input, output, stmt}) = Map.fromList $ map helper (input ++ output ++ blockDeclarations stmt)
   where
     helper :: VarDeclaration -> (String, Z3 AST)
-    helper (VarDeclaration s t)   = (s, do
+    helper (VarDeclaration s t) = (s, do
       sort <- createSort t
       symbol <- mkStringSymbol s
       mkVar symbol sort)
 
     createSort :: Type -> Z3 Sort
     createSort (AType t) = do
-      int_sort <- mkIntSort
-      t_sort <- createSort $ PType t
-      mkArraySort int_sort t_sort
-    createSort (PType PTInt) = mkIntSort
+      intSort <- mkIntSort
+      tSort <- createSort $ PType t
+      mkArraySort intSort tSort
+      
+    createSort (PType PTInt)  = mkIntSort
     createSort (PType PTBool) = mkIntSort
+
     createSort t = error $ "Unimplemented type conversion to z3" ++ show t
 
--- TODO: currently this is treating block declarations as global variables,
--- this wrong but easier this way
+-- TODO: currently this is treating block declarations as global variables;
+--    this is wrong, but easier this way.
 blockDeclarations :: Stmt -> [VarDeclaration]
-blockDeclarations (Seq s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
-blockDeclarations (IfThenElse _ s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
-blockDeclarations (While _ s1) = blockDeclarations s1
-blockDeclarations (Block ds s1) = ds ++ blockDeclarations s1
-blockDeclarations (TryCatch _ s1 s2) = blockDeclarations s1 ++ blockDeclarations s2
-blockDeclarations _ = []
+blockDeclarations (Seq s1 s2)           = blockDeclarations s1 ++ blockDeclarations s2
+blockDeclarations (IfThenElse _ s1 s2)  = blockDeclarations s1 ++ blockDeclarations s2
+blockDeclarations (While _ s1)          = blockDeclarations s1
+blockDeclarations (Block ds s1)         = ds ++ blockDeclarations s1
+blockDeclarations (TryCatch _ s1 s2)    = blockDeclarations s1 ++ blockDeclarations s2
+blockDeclarations _                     = []
 
 generate :: Map.Map String (Z3 AST) -> Expr -> Z3 AST
 -- Turns an expression into a Z3 AST.
@@ -78,25 +80,27 @@ generate env (BinopExpr Equal e1 e2)            = join (mkEq <$> generate env e1
 generate env expr@(BinopExpr Alias e1 e2)       = error $ "Unimplemented Z3 conversion from BinopExpr Alias: " ++ show expr
 
 generate env (Forall s e) = do
-  quantified_var <- mkStringSymbol s >>= mkIntVar
-  let env' = Map.insert s (return quantified_var) env
+  quantifiedVar <- mkStringSymbol s >>= mkIntVar
+  let env' = Map.insert s (return quantifiedVar) env
   expr <- generate env' e
-  app <- toApp quantified_var
+  app <- toApp quantifiedVar
   mkForallConst [] [app] expr
+
 generate env (Exists s e) = do
-  quantified_var <- mkStringSymbol s >>= mkIntVar
-  let env' = Map.insert s (return quantified_var) env
+  quantifiedVar <- mkStringSymbol s >>= mkIntVar
+  let env' = Map.insert s (return quantifiedVar) env
   expr <- generate env' e
-  app <- toApp quantified_var
+  app <- toApp quantifiedVar
   mkExistsConst [] [app] expr
 
--- Though i needed this voor array stuff but ended up using repby instead
-generate env (Cond cond t f) = join $ mkIte <$> generate env cond <*> generate env t <*> generate env f
+-- Thought this was needed for aray stuff, but ended up using repby instead.
+generate env (Cond cond t f)   = join $ mkIte <$> generate env cond <*> generate env t <*> generate env f
 generate env (RepBy var i val) = join $ mkStore <$> generate env var <*> generate env i <*> generate env val
 generate env (ArrayElem var i) = join $ mkSelect <$> generate env var <*> generate env i
+
 -- TODO
-generate env expr@(SizeOf v) = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
-generate _ expr = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
+generate _ expr@(SizeOf v)  = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
+generate _ expr             = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
 
 createZ3AST :: Program -> Expr -> Z3 AST
 createZ3AST p = generate (initialize p)
@@ -119,6 +123,7 @@ isValid :: Program -> Expr -> IO Bool
 -- Checks whether an expression is valid.
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
 isValid p e = do
+  -- TODO: Debug output.
   let ast = createZ3AST p e
   (conclusion, model) <- evalZ3 $ checker ast
 
