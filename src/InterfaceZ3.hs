@@ -17,8 +17,8 @@ initialize :: Program -> Map.Map String (Z3 AST)
 -- Generates a list of variable instantiations from the program spec.
 initialize (Program {input, output, stmt}) = Map.fromList $ concatMap helper (input ++ output ++ blockDeclarations stmt)
   where
-    -- type is list because array creates two variables: the length and the
-    -- array itself
+    -- Type is list because array creates two variables: the length and the
+    --    array itself.
     helper :: VarDeclaration -> [(String, Z3 AST)]
     helper (VarDeclaration s t@(AType pt)) =
       ( s,
@@ -106,15 +106,16 @@ generate env (Exists s e) = do
   app <- toApp quantifiedVar
   mkExistsConst [] [app] expr
 
--- Thought i needed cond for array stuff but ended up using repby instead
+-- Thought this was needed for arrays, but we used repby instead.
 generate env (Cond cond t f)   = join $ mkIte <$> generate env cond <*> generate env t <*> generate env f
 generate env (RepBy var i val) = join $ mkStore <$> generate env var <*> generate env i <*> generate env val
 generate env (ArrayElem var i) = join $ mkSelect <$> generate env var <*> generate env i
 generate env (SizeOf v)        = fromJust $ Map.lookup ('#':fromJust (getArrayName v)) env
 generate _ expr                = error $ "Unimplemented Z3 conversion from Expr: " ++ show expr
 
--- function to get the name of an array out of an repby expression
+
 getArrayName :: Expr -> Maybe String
+-- Given a repby-expression, returns the array name.
 getArrayName (RepBy e1 _ _) = getArrayName e1
 getArrayName (Var e)        = Just e
 getArrayName _              = Nothing
