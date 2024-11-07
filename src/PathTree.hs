@@ -10,6 +10,8 @@ module PathTree (
 import GCLParser.GCLDatatype
 import Wlp ( translate, simplify )
 import InterfaceZ3( isSatisfiable )
+import Debug.Trace
+import Control.Monad
 
 data PathTree = Node Stmt PathTree
               -- Cond(itional) Nodes contain the expression of the condition: if true, the left PathTree is evaluated; otherwise, the right one.
@@ -60,18 +62,25 @@ generatePaths noHeur n p = travel 0 []
         -- If path to g is feasible, we explore; else discard.
         then travel (c + 1) (xs ++ [Assume g]) pt1
         else return ([], 1)
-      
+
       (b2, noPruned2) <- if feasibleNegG
         -- If path to ¬g is feasible, we explore; else discard.
         then travel (c + 1) (xs ++ [Assume (OpNeg g)]) pt2
         else return ([], 1)
- 
+
       return (b1 ++ b2, noPruned1 + noPruned2)
 
 isFeasible :: Program -> Expr -> [Stmt] -> IO Bool
 -- Checks the feasibility of branch condition g, given program path xs.
 -- TODO: Optimize performance, prevent many z3 calls.
-isFeasible p g xs =  isSatisfiable p calculateWlp
+isFeasible p g xs = do
+  x <- isSatisfiable p calculateWlp
+  unless x $ do
+    putStrLn "----------------------------------------------------------------"
+    print xs
+    print g
+    print calculateWlp
+  return x
   where
     calculateWlp :: Expr
     -- Calculates the wlp of all statements so far in path, with g as postcondition.

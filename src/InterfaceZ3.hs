@@ -127,15 +127,19 @@ isSatisfiable :: Program -> Expr -> IO Bool
 -- Checks whether an expression is satisfiable.
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
 isSatisfiable p e = do
-  conclusion <- evalZ3 $ checker $ createZ3AST p e
+  let ast = createZ3AST p e
+  (conclusion, model) <- evalZ3 $ checker ast
+  -- print generated z3 AST
+  -- evalZ3 (ast >>= astToString) >>= putStrLn
+  -- print model if model was found
+  -- maybe mempty (\m -> evalZ3 (modelToString m) >>= putStrLn) model
   return $ conclusion == Sat
   where
-    checker :: Z3 AST -> Z3 Result
+    checker :: Z3 AST -> Z3 (Result, Maybe Model)
     checker ast = do
       _ast <- ast
       assert _ast
-      (verdict, _) <- getModel
-      return verdict
+      getModel
 
 isValid :: Program -> Expr -> IO Bool
 -- Checks whether an expression is valid.
@@ -146,9 +150,9 @@ isValid p e = do
   (conclusion, model) <- evalZ3 $ checker ast
 
   -- print generated z3 AST
-  --evalZ3 (ast >>= astToString) >>= putStrLn
+  -- evalZ3 (ast >>= astToString) >>= putStrLn
   -- print model if model was found
-  --maybe mempty (\m -> evalZ3 (modelToString m) >>= putStrLn) model
+  -- maybe mempty (\m -> evalZ3 (modelToString m) >>= putStrLn) model
 
   return $ conclusion == Unsat -- Note: this should be unsat, and cost us 20 years to spot
   where
