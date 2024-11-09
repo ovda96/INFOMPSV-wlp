@@ -75,6 +75,7 @@ executable wlp-verifier
                     , options
                     , containers
                     , timeit
+                    , random
 
     -- Directories containing source files.
     hs-source-dirs:   src

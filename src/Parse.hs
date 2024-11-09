@@ -26,8 +26,8 @@ data RunResult = RunResult {
   runtime :: Double
 }
 
-run :: Bool -> Int -> Bool -> String -> IO RunResult
-run noHeur k v path = do
+run :: (Int -> Int -> IO Bool) -> Bool -> Int -> Bool -> String -> IO RunResult
+run f noHeur k v path = do
   (t, (p, pruned, res)) <- timeItT $ do
     -- 1) Parse file...
     gcl <- parseGCLfile path
@@ -36,7 +36,7 @@ run noHeur k v path = do
     -- 2) Construct tree and valid paths of max.length k
     env <- newEnv Nothing stdOpts -- Reusing the Z3 environment significally increases performance.
     let tree = PathTree.generate prg
-    (paths, noPruned) <- PathTree.generatePaths env noHeur k prg tree
+    (paths, noPruned) <- PathTree.generatePaths env f noHeur k prg tree
     print ("[INFO] No. paths generated: " ++ show (length paths))
 
     -- Sorting the paths on length from short to long is very benificial if a short path is faulty.

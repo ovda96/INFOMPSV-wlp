@@ -4,8 +4,9 @@ module Experiments (runExpirements) where
 import Data.Bifunctor (second)
 import Data.List (intercalate)
 import Parse
-import Text.Printf
 import System.Timeout
+import Text.Printf
+import System.Random
 
 experimentFiles :: [String]
 experimentFiles =
@@ -13,35 +14,69 @@ experimentFiles =
     ("examples/" ++)
     [ "E.gcl",
       "S1.gcl",
-      "memberOf.gcl",
-      -- "min.gcl",
-      -- "minind.gcl",
-      -- "reverse.gcl",
-      -- "swap.gcl",
+      "min.gcl",
+      "minind.gcl",
+      "reverse.gcl",
+      "swap.gcl",
       "test.gcl"
     ]
 
+benchmarkFiles :: [String]
+benchmarkFiles =
+  map
+    ("examples/benchmark/" ++)
+    [ "divByN.gcl",
+      "memberOf.gcl",
+      "pullUp.gcl"
+    ]
+
+functions :: [(String, Int -> Int -> IO Bool)]
+functions =
+  [ (" always f ", \_ _ -> return True),
+    (" random",
+      \c m -> do
+        number <- randomRIO (1, m)
+        return $ number > c
+    ),
+    (" half",
+      \_ _ -> do
+        number <- randomRIO (1:: Int, 2)
+        return $ number == 1
+    ),
+    (" quarter",
+      \_ _ -> do
+        number <- randomRIO (1:: Int, 4)
+        return $ number == 1
+    ),
+    (" eight",
+      \_ _ -> do
+        number <- randomRIO (1:: Int, 8)
+        return $ number == 1
+    )
+  ]
+
 timeoutMS :: Int
-timeoutMS = 40*10^(6 :: Int)
+timeoutMS = 40 * 10 ^ (6 :: Int)
 
 runExpirements :: IO ()
 runExpirements = do
   putStrLn "hello experiments"
-  let lengths = [10, 30 .. 100]
-  runtimes <- experimentRunTimes experimentFiles lengths
+  let lengths = [30, 40, 45]
+  runtimes <- experimentRunTimes functions benchmarkFiles lengths
   let r = map (second $ map showTime) runtimes
   toCsvFile "out.csv" (("lengths", map show lengths) : r)
 
-experimentRunTimes :: [String] -> [Int] -> IO [(String, [Maybe Double])]
-experimentRunTimes files pathLengths =
+experimentRunTimes :: [(String, Int -> Int -> IO Bool)] -> [String] -> [Int] -> IO [(String, [Maybe Double])]
+experimentRunTimes fs files pathLengths =
   sequence
     [ do
-        let name = file ++ if noHeur then " no heuristics" else ""
+        let name = file ++ (if noHeur then " no heuristics" else "") ++ label
         print name
-        lst <- sequence [timeout timeoutMS (run noHeur len False file) | len <- pathLengths]
+        lst <- sequence [timeout timeoutMS (run f noHeur len False file) | len <- pathLengths]
         return (name, map (fmap runtime) lst)
       | file <- files,
-        noHeur <- [True, False]
+        noHeur <- [True, False],
+        (label, f) <- if noHeur then [("", \_ _ -> return True)] else fs
     ]
 
 showTime :: Maybe Double -> String

@@ -4,13 +4,15 @@
 module PathTree (
   PathTree(Node, CondNode, Leaf),
   generate,
-  generatePaths
+  generatePaths,
+  randomChooseCheck
   ) where
 --
 import GCLParser.GCLDatatype
 import Wlp ( translate, simplify )
 import InterfaceZ3( isSatisfiable )
 import Z3.Monad (Z3Env)
+import System.Random
 
 data PathTree = Node Stmt PathTree
               -- Cond(itional) Nodes contain the expression of the condition: if true, the left PathTree is evaluated; otherwise, the right one.
@@ -35,11 +37,13 @@ generate (Program { stmt })  = process Leaf stmt
 
     process pt s                      = Node s pt -- the rest
 
-generatePaths :: Z3Env -> Bool -> Int -> Program -> PathTree -> IO ([[Stmt]],Int)
+generatePaths :: Z3Env -> (Int -> Int -> IO Bool) -> Bool -> Int -> Program -> PathTree -> IO ([[Stmt]],Int)
 -- Generates a list of program excecutions of max. length n.
 --    This unfortunately needs to be in an IO-block since we need to be able to evaluate the 
 --    feasibility of a path using Z3.
-generatePaths env noHeur n p = travel 0 []
+--    f is a function which based on the current path length and max path length
+--      decides whether or not to check for feasibility
+generatePaths env f noHeur n p = travel 0 []
   where
     travel :: Int -> [Stmt] -> PathTree -> IO ([[Stmt]],Int)
     travel _ xs Leaf           = return ([xs], 0)
@@ -53,8 +57,9 @@ generatePaths env noHeur n p = travel 0 []
     travel c xs (CondNode g pt1 pt2) = do
       -- We check the feasibility of path xs by calculating the wlp using g as postcond., AND using ¬g as pondcond.
       --    Note that we do not check the path feasibility when heuristics are turned off.
-      feasibleG <- if noHeur then return True else isFeasible env p g xs
-      feasibleNegG <- if noHeur then return True else isFeasible env p (OpNeg g) xs
+      checkFeasibility <- f c n
+      feasibleG <- if noHeur || not checkFeasibility then return True else isFeasible env p g xs
+      feasibleNegG <- if noHeur || not checkFeasibility then return True else isFeasible env p (OpNeg g) xs
 
       (b1, noPruned1) <- if feasibleG
         -- If path to g is feasible, we explore; else discard.
@@ -67,6 +72,12 @@ generatePaths env noHeur n p = travel 0 []
         else return ([], 1)
  
       return (b1 ++ b2, noPruned1 + noPruned2)
+
+randomChooseCheck :: Int -> Int -> IO Bool
+-- randomly chooses to do feasibility check with chance (max - current) / max
+randomChooseCheck currentLength maxPathLength = do
+  number <- randomRIO (1, maxPathLength)
+  return $ number > currentLength
 
 isFeasible :: Z3Env -> Program -> Expr -> [Stmt] -> IO Bool
 -- Checks the feasibility of branch condition g, given program path xs.

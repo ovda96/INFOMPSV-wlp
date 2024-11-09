@@ -8,6 +8,7 @@ import Parse (run)
 import System.TimeIt ( timeIt )
 import Experiments
 import Control.Monad (void)
+import PathTree (randomChooseCheck)
 
 -- Option/arg parsing
 data MainOptions = MainOptions
@@ -53,4 +54,4 @@ main = runCommand process
     process _ []          = putStrLn "Please provide path to .gcl-file"
     
     -- Note that we only parse the first supplied file path.
-    process opts (p : _)  = timeIt $ void $ Parse.run (optHeuristics opts) (optLength opts) (optVerbose opts) p
+    process opts (p : _)  = timeIt $ void $ Parse.run randomChooseCheck (optHeuristics opts) (optLength opts) (optVerbose opts) p
