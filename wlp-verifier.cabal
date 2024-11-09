@@ -52,7 +52,7 @@ build-type:         Simple
 -- extra-source-files:
 
 executable wlp-verifier
-    ghc-options:      -Wall
+    ghc-options:      -Wall -threaded
 
     -- .hs or .lhs file containing the Main module.
     main-is:          Main.hs
@@ -74,6 +74,7 @@ executable wlp-verifier
                     , options
                     , containers
                     , timeit
+                    , parallel-io
 
     -- Directories containing source files.
     hs-source-dirs:   src

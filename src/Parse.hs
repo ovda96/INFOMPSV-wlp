@@ -11,6 +11,7 @@ import GCLParser.GCLDatatype ( Program, Stmt )
 import InterfaceZ3 ( isValid )
 import Z3.Monad ( Z3Env, newEnv, stdOpts )
 import Data.List ( sortOn )
+import Control.Concurrent.ParallelIO.Global (parallel, stopGlobalPool)
 
 run :: Bool -> Int -> Bool -> String -> IO ()
 run noHeur k v path = do
@@ -47,17 +48,16 @@ run noHeur k v path = do
 
 validate :: Bool -> Z3Env -> Program -> [[Stmt]] -> IO Bool
 -- Validates the supplied paths.
-validate _ _ _ []     = return True
-validate v env p (x : xs) = do
+validate _ _ _ [] = return True
+validate v env p paths = do
+  results <- parallel $ map (validatePath v (newEnv Nothing stdOpts) p) paths
+  stopGlobalPool
+  return $ all id results
+
+validatePath :: Bool -> IO Z3Env -> Program -> [Stmt] -> IO Bool
+validatePath v env p x = do
   when v $ print ("[PATH] " ++ show x)
   let wlp = Wlp.calculate x
   when v $ print ("[WLP] " ++ show wlp)
-
-  valid <- isValid env p wlp
-  if valid
-    then validate v env p xs
-    -- If we encounter a faulty path, we reject and print it
-    else do
-      print "reject"
-      print $ show x
-      return False
+  env' <- env
+  isValid env' p wlp
