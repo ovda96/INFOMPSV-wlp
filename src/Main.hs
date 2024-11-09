@@ -18,10 +18,10 @@ instance Options MainOptions where
   defineOptions :: DefineOptions MainOptions
   defineOptions = MainOptions
     <$> defineOption optionType_bool (\o -> o
-      { optionLongFlags = ["heuristics"]
+      { optionLongFlags = ["noHeuristics"]
       , optionShortFlags = ['h']
       , optionDefault = False
-      , optionDescription = "Turn on heuristics"
+      , optionDescription = "Turns off heuristics"
       })
     <*> defineOption optionType_int (\o -> o
       { optionLongFlags = ["length"]
