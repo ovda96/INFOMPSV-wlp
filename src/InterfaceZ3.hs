@@ -126,7 +126,8 @@ isSatisfiable :: Z3Env -> Program -> Expr -> IO Bool
 -- Checks whether an expression is satisfiable.
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
 isSatisfiable env p e = do
-  conclusion <- evalZ3WithEnv (checker $ createZ3AST p e) env
+  let ast = createZ3AST p e
+  conclusion <- evalZ3WithEnv (local $ checker ast) env
   return $ conclusion == Sat
   where
     checker :: Z3 AST -> Z3 Result
