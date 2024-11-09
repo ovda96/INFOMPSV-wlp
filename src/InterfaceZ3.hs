@@ -122,11 +122,11 @@ getArrayName _              = Nothing
 createZ3AST :: Program -> Expr -> Z3 AST
 createZ3AST p = generate (initialize p)
 
-isSatisfiable :: Program -> Expr -> IO Bool
+isSatisfiable :: Z3Env -> Program -> Expr -> IO Bool
 -- Checks whether an expression is satisfiable.
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
-isSatisfiable p e = do
-  conclusion <- evalZ3 $ checker $ createZ3AST p e
+isSatisfiable env p e = do
+  conclusion <- evalZ3WithEnv (checker $ createZ3AST p e) env
   return $ conclusion == Sat
   where
     checker :: Z3 AST -> Z3 Result

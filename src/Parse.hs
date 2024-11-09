@@ -34,8 +34,9 @@ run noHeur k v path = do
     let (Right prg) = gcl
     
     -- 2) Construct tree and valid paths of max.length k
+    env <- newEnv Nothing stdOpts -- Reusing the Z3 environment significally increases performance.
     let tree = PathTree.generate prg
-    (paths, noPruned) <- PathTree.generatePaths noHeur k prg tree
+    (paths, noPruned) <- PathTree.generatePaths env noHeur k prg tree
     print ("[INFO] No. paths generated: " ++ show (length paths))
 
     -- Sorting the paths on length from short to long is very benificial if a short path is faulty.
@@ -48,7 +49,6 @@ run noHeur k v path = do
     unless noHeur $ print ("[INFO] No. branches pruned: " ++ show noPruned)
 
     -- 3) Validate complete paths
-    env <- newEnv Nothing stdOpts -- Reusing the Z3 environment significally increases performance.
     res <- validate v env prg sortedPaths
     when res $ print "accept"
     return (length paths, noPruned, res)

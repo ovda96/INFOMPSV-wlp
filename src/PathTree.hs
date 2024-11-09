@@ -10,6 +10,7 @@ module PathTree (
 import GCLParser.GCLDatatype
 import Wlp ( translate, simplify )
 import InterfaceZ3( isSatisfiable )
+import Z3.Monad (Z3Env)
 
 data PathTree = Node Stmt PathTree
               -- Cond(itional) Nodes contain the expression of the condition: if true, the left PathTree is evaluated; otherwise, the right one.
@@ -34,11 +35,11 @@ generate (Program { stmt })  = process Leaf stmt
 
     process pt s                      = Node s pt -- the rest
 
-generatePaths :: Bool -> Int -> Program -> PathTree -> IO ([[Stmt]],Int)
+generatePaths :: Z3Env -> Bool -> Int -> Program -> PathTree -> IO ([[Stmt]],Int)
 -- Generates a list of program excecutions of max. length n.
 --    This unfortunately needs to be in an IO-block since we need to be able to evaluate the 
 --    feasibility of a path using Z3.
-generatePaths noHeur n p = travel 0 []
+generatePaths env noHeur n p = travel 0 []
   where
     travel :: Int -> [Stmt] -> PathTree -> IO ([[Stmt]],Int)
     travel _ xs Leaf           = return ([xs], 0)
@@ -52,8 +53,8 @@ generatePaths noHeur n p = travel 0 []
     travel c xs (CondNode g pt1 pt2) = do
       -- We check the feasibility of path xs by calculating the wlp using g as postcond., AND using ¬g as pondcond.
       --    Note that we do not check the path feasibility when heuristics are turned off.
-      feasibleG <- if noHeur then return True else isFeasible p g xs
-      feasibleNegG <- if noHeur then return True else isFeasible p (OpNeg g) xs
+      feasibleG <- if noHeur then return True else isFeasible env p g xs
+      feasibleNegG <- if noHeur then return True else isFeasible env p (OpNeg g) xs
 
       (b1, noPruned1) <- if feasibleG
         -- If path to g is feasible, we explore; else discard.
@@ -67,9 +68,9 @@ generatePaths noHeur n p = travel 0 []
  
       return (b1 ++ b2, noPruned1 + noPruned2)
 
-isFeasible :: Program -> Expr -> [Stmt] -> IO Bool
+isFeasible :: Z3Env -> Program -> Expr -> [Stmt] -> IO Bool
 -- Checks the feasibility of branch condition g, given program path xs.
-isFeasible p g xs =  isSatisfiable p calculateWlp
+isFeasible env p g xs = isSatisfiable env p calculateWlp
   where
     calculateWlp :: Expr
     -- Calculates the wlp of all statements so far in path, with g as postcondition.
