@@ -17,12 +17,24 @@ data MainOptions = MainOptions
 instance Options MainOptions where
   defineOptions :: DefineOptions MainOptions
   defineOptions = MainOptions
-    <$> simpleOption "noHeuristics" False
-          "Disable heuristics"
-    <*> simpleOption "length" 0     -- TODO: Seems a silly default value.
-          "The inclusive maximum path length to be evaluated"
-    <*> simpleOption "verbose" False
-          "Turn on detailed information printing"
+    <$> defineOption optionType_bool (\o -> o
+      { optionLongFlags = ["heuristics"]
+      , optionShortFlags = ['h']
+      , optionDefault = False
+      , optionDescription = "Turn on heuristics"
+      })
+    <*> defineOption optionType_int (\o -> o
+      { optionLongFlags = ["length"]
+      , optionShortFlags = ['k']
+      , optionDefault = 0
+      , optionDescription = "The inclusive maximum path length to be evaluated"
+      })
+    <*> defineOption optionType_bool (\o -> o
+      { optionLongFlags = ["verbose"]
+      , optionShortFlags = ['v']
+      , optionDefault = False
+      , optionDescription = "Print detailed information to console"
+      })
 
 -- MAIN
 -- When using cabal run including arguments/options, use:

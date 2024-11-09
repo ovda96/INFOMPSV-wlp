@@ -9,7 +9,7 @@ import Wlp( calculate )
 import Control.Monad ( when, unless )
 import GCLParser.GCLDatatype ( Program, Stmt )
 import InterfaceZ3 ( isValid )
-import Z3.Monad
+import Z3.Monad ( Z3Env, newEnv, stdOpts )
 import Data.List ( sortOn )
 
 run :: Bool -> Int -> Bool -> String -> IO ()
