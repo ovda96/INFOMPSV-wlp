@@ -137,18 +137,12 @@ isSatisfiable p e = do
       (verdict, _) <- getModel
       return verdict
 
-isValid :: Program -> Expr -> IO Bool
+isValid :: Z3Env -> Program -> Expr -> IO Bool
 -- Checks whether an expression is valid.
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
-isValid p e = do
-  -- TODO: Debug output.
+isValid env p e = do
   let ast = createZ3AST p e
-  (conclusion, model) <- evalZ3 $ checker ast
-
-  -- print generated z3 AST
-  --evalZ3 (ast >>= astToString) >>= putStrLn
-  -- print model if model was found
-  --maybe mempty (\m -> evalZ3 (modelToString m) >>= putStrLn) model
+  (conclusion, _) <- evalZ3WithEnv (local $ checker ast) env
 
   return $ conclusion == Unsat -- Note: this should be unsat, and cost us 20 years to spot
   where
@@ -158,3 +152,4 @@ isValid p e = do
       f <- mkNot _ast
       assert f
       getModel
+      

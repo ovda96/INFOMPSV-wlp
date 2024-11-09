@@ -9,14 +9,15 @@ import Wlp( calculate )
 import Control.Monad ( when, unless )
 import GCLParser.GCLDatatype ( Program, Stmt )
 import InterfaceZ3 ( isValid )
-import Data.List (sortOn)
+import Z3.Monad
+import Data.List ( sortOn )
 
 run :: Bool -> Int -> Bool -> String -> IO ()
 run noHeur k v path = do
   -- 1) Parse file...
   gcl <- parseGCLfile path
   let (Right prg) = gcl
-  
+
   -- 2) Construct tree and valid paths of max.length k
   let tree = PathTree.generate prg
   (paths, noPruned) <- PathTree.generatePaths noHeur k prg tree
@@ -40,20 +41,21 @@ run noHeur k v path = do
   unless noHeur $ print ("[INFO] No. branches pruned: " ++ show noPruned)
 
   -- 3) Validate complete paths
-  result <- validate v prg sortedPaths
+  env <- newEnv Nothing stdOpts -- Reusing this is a SIGNIFICANT speedup
+  result <- validate v env prg sortedPaths
   when result $ print "accept"
 
-validate :: Bool -> Program -> [[Stmt]] -> IO Bool
+validate :: Bool -> Z3Env -> Program -> [[Stmt]] -> IO Bool
 -- Validates the supplied paths.
-validate _ _ []     = return True
-validate v p (x : xs) = do
+validate _ _ _ []     = return True
+validate v env p (x : xs) = do
   when v $ print ("[PATH] " ++ show x)
   let wlp = Wlp.calculate x
   when v $ print ("[WLP] " ++ show wlp)
 
-  valid <- isValid p wlp
+  valid <- isValid env p wlp
   if valid
-    then validate v p xs
+    then validate v env p xs
     -- If we encounter a faulty path, we reject and print it
     else do
       print "reject"
