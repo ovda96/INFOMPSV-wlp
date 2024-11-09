@@ -5,7 +5,6 @@ module InterfaceZ3 (
   isSatisfiable,
   isValid
 ) where
-
 --
 import Z3.Monad
 import GCLParser.GCLDatatype
@@ -48,7 +47,7 @@ initialize (Program {input, output, stmt}) = Map.fromList $ concatMap helper (in
     createSort t = error $ "Unimplemented type conversion to z3" ++ show t
 
 -- TODO: currently this is treating block declarations as global variables;
---    this is wrong, but easier this way.
+--    this is wrong (for i.e. block declarations in loops), but easier this way.
 blockDeclarations :: Stmt -> [VarDeclaration]
 blockDeclarations (Seq s1 s2)           = blockDeclarations s1 ++ blockDeclarations s2
 blockDeclarations (IfThenElse _ s1 s2)  = blockDeclarations s1 ++ blockDeclarations s2
@@ -65,7 +64,7 @@ generate _ (LitB b)     = if b then mkTrue else mkFalse
 generate env (Parens e) = generate env e
 generate env (OpNeg e)  = mkNot =<< generate env e
 
--- Some shenanigans are needed to deal with monads/applicatives outside of do-blocks (although we could have just used them, oops). Essentially,
+-- Some shenanigans are needed to deal with monads/applicatives outside of do-blocks (EDIT (later): although we could have just used them, oops). Essentially,
 --    there are two possible patterns involved:
 --    1) (i.e.) mkGt <$> (... e1) <*> (... e2)
 --        do

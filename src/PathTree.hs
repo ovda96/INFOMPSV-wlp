@@ -30,7 +30,6 @@ generate (Program { stmt })  = process Leaf stmt
     --    else, continue to statement after while loop.
     process pt (While g s)            = CondNode g (process pt (Seq s (While g s))) pt
 
-    -- TODO
     process pt e@(TryCatch msg s1 s2) = error $ "Unimplemented PathTree conversion from Stmt TryCatch: " ++ show e
 
     process pt s                      = Node s pt -- the rest
@@ -70,7 +69,6 @@ generatePaths noHeur n p = travel 0 []
 
 isFeasible :: Program -> Expr -> [Stmt] -> IO Bool
 -- Checks the feasibility of branch condition g, given program path xs.
--- TODO: Optimize performance, prevent many z3 calls.
 isFeasible p g xs =  isSatisfiable p calculateWlp
   where
     calculateWlp :: Expr
