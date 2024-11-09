@@ -39,7 +39,7 @@ instance Options MainOptions where
 -- MAIN
 -- When using cabal run including arguments/options, use:
 --    cabal run exe:wlp-verifier -- {ARGS} {OPTS}
---  I.e.: cabal run exe:wlp-verifier -- "./examples/test.gcl" --heuristics --length=12
+--  I.e.: cabal run exe:wlp-verifier -- "./examples/test.gcl" -k 12
 main :: IO ()
 main = runCommand process
   where 
