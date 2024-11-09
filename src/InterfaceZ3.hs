@@ -141,7 +141,7 @@ isValid :: Z3Env -> Program -> Expr -> IO Bool
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
 isValid env p e = do
   let ast = createZ3AST p e
-  (conclusion, _) <- evalZ3WithEnv (local $ checker ast) env
+  (conclusion, _) <- evalZ3WithEnv (checker ast) env
 
   return $ conclusion == Unsat -- Note: this should be unsat, and cost us 20 years to spot
   where
