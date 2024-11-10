@@ -4,9 +4,9 @@
 module Main (main) where
 -- 
 import Options
-import Parse (run)
+import Parse ( run )
 import System.TimeIt ( timeIt )
-import Experiments
+import Experiments ( runExpirements )
 import Control.Monad (void)
 import PathTree (randomChooseCheck)
 
