@@ -1,4 +1,4 @@
 lengths,Running Time,Generated Paths,Pruned Paths,examples/benchmark/divByN.gcl runtime,examples/benchmark/divByN.gcl generated paths,examples/benchmark/divByN.gcl pruned paths,examples/benchmark/memberOf.gcl no heuristics runtime,examples/benchmark/memberOf.gcl no heuristics generated paths,examples/benchmark/memberOf.gcl no heuristics pruned paths,examples/benchmark/memberOf.gcl runtime,examples/benchmark/memberOf.gcl generated paths,examples/benchmark/memberOf.gcl pruned paths,examples/benchmark/pullUp.gcl no heuristics runtime,examples/benchmark/pullUp.gcl no heuristics generated paths,examples/benchmark/pullUp.gcl no heuristics pruned paths,examples/benchmark/pullUp.gcl runtime,examples/benchmark/pullUp.gcl generated paths,examples/benchmark/pullUp.gcl pruned paths
 30,0.04884139,97,0,0.059222592,5,8,0.06585491,127,0,0.120370188,114,13,1.061414981,126,0,0.132441514,15,27
-60,29.003095501,56675,0,0.065931555,35,53,20.945513629,16383,0,23.874757911,16370,13,60000000,0,0,0.071175547,8,14
-90,60000000,0,0,0.243678408,176,123,60000000,0,0,60000000,0,0,60000000,0,0,0.041720608,8,16
+60,29.003095501,56675,0,0.065931555,35,53,20.945513629,16383,0,23.874757911,16370,13,60,0,0,0.071175547,8,14
+90,60,0,0,0.243678408,176,123,60,0,0,60,0,0,60,0,0,0.041720608,8,16
