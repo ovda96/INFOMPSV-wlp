@@ -127,7 +127,10 @@ isSatisfiable :: Z3Env -> Program -> Expr -> IO Bool
 -- src: https://github.com/wooshrow/gclparser/blob/master/examples/examplesHaskellZ3/Z3ProverExample.hs
 isSatisfiable env p e = do
   let ast = createZ3AST p e
-  conclusion <- evalZ3WithEnv (local $ checker ast) env
+
+  -- "local" below forces Z3 to keep reusing the FIRST supplied env instead of adapting the env after every check;
+  --     this is necessary for feasibility, since results from one branch's feasibility do not imply anything of anothers.
+  conclusion <- evalZ3WithEnv (local $ checker ast) env 
   return $ conclusion == Sat
   where
     checker :: Z3 AST -> Z3 Result

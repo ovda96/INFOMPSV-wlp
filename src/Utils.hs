@@ -1,7 +1,8 @@
 -- | Utils.hs: Utility funcs
 
 module Utils (
-  apply
+  apply,
+  count
 ) where
 --
 import GCLParser.GCLDatatype
@@ -18,3 +19,18 @@ apply f (Exists s e)          = f (Exists s (apply f e))
 apply f (RepBy e1 e2 e3)      = f (RepBy (apply f e1) (apply f e2) (apply f e3))
 apply f (NewStore e)          = f (NewStore (apply f e))
 apply f e                     = f e
+
+count :: Expr -> Int
+-- Counts the total number of literals and variables in an expression.
+count (LitB _)            = 1
+count (LitI _)            = 1
+count (Var _)             = 1
+count (Parens e)          = count e
+count (ArrayElem e1 e2)   = count e1 + count e2
+count (OpNeg e)           = count e
+count (BinopExpr _ e1 e2) = count e1 + count e2
+count (Forall _ e)        = count e
+count (Exists _ e)        = count e
+count (RepBy e1 e2 e3)    = count e1 + count e2 + count e3
+count (NewStore e)        = count e
+count _                   = 0

@@ -42,7 +42,7 @@ generatePaths :: Z3Env -> (Int -> Int -> IO Bool) -> Bool -> Int -> Program -> P
 --    This unfortunately needs to be in an IO-block since we need to be able to evaluate the 
 --    feasibility of a path using Z3.
 --    f is a function which based on the current path length and max path length
---      decides whether or not to check for feasibility
+--      decides whether or not to check for feasibility.
 generatePaths env f noHeur n p = travel 0 []
   where
     travel :: Int -> [Stmt] -> PathTree -> IO ([[Stmt]],Int)
@@ -74,7 +74,7 @@ generatePaths env f noHeur n p = travel 0 []
       return (b1 ++ b2, noPruned1 + noPruned2)
 
 randomChooseCheck :: Int -> Int -> IO Bool
--- randomly chooses to do feasibility check with chance (max - current) / max
+-- Randomly chooses to do feasibility check with chance (max - current) / max.
 randomChooseCheck currentLength maxPathLength = do
   number <- randomRIO (1, maxPathLength)
   return $ number > currentLength

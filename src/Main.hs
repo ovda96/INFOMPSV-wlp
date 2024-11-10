@@ -4,9 +4,9 @@
 module Main (main) where
 -- 
 import Options
-import Parse (run)
+import Parse ( run )
 import System.TimeIt ( timeIt )
-import Experiments
+import Experiments ( runExpirements )
 import Control.Monad (void)
 import PathTree (randomChooseCheck)
 
@@ -15,7 +15,7 @@ data MainOptions = MainOptions
   { optHeuristics :: Bool
   , optLength :: Int
   , optVerbose :: Bool
-  , experiments :: Bool
+  , optExperiments :: Bool
   }
 
 instance Options MainOptions where
@@ -40,7 +40,7 @@ instance Options MainOptions where
       , optionDescription = "Print detailed information to console"
       })
     <*> simpleOption "experiments" False
-          "Run the experiments"
+          "Run the experiments: outputs stats to out.csv"
 
 -- MAIN
 -- When using cabal run including arguments/options, use:
@@ -51,7 +51,7 @@ main = runCommand process
   where 
     process :: MainOptions -> [String] -> IO()
     process (MainOptions _ _ _ True) _ = runExpirements
-    process _ []          = putStrLn "Please provide path to .gcl-file"
+    process _ []                       = putStrLn "Please provide path to .gcl-file"
     
     -- Note that we only parse the first supplied file path.
     process opts (p : _)  = timeIt $ void $ Parse.run randomChooseCheck (optHeuristics opts) (optLength opts) (optVerbose opts) p

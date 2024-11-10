@@ -7,7 +7,7 @@ module Wlp (
 ) where
 --
 import GCLParser.GCLDatatype
-import Utils (apply)
+import Utils ( apply )
 
 calculate :: [Stmt] -> Expr
 -- We fold using "true" as our starting value
