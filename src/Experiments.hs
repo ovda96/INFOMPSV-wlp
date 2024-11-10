@@ -4,10 +4,10 @@ module Experiments (runExpirements) where
 import Data.Bifunctor (second)
 import Data.List (intercalate)
 import Parse
+import PathTree (randomChooseCheck)
+import System.Random
 import System.Timeout
 import Text.Printf
-import System.Random
-import PathTree (randomChooseCheck)
 
 experimentFiles :: [String]
 experimentFiles =
@@ -35,37 +35,38 @@ benchmarkFiles =
 functions :: [(String, Int -> Int -> IO Bool)]
 functions =
   [ (" always check ", \_ _ -> return True),
-    (" chance (m-c)/m",
+    ( " chance (m-c)/m",
       \c m -> do
         number <- randomRIO (1, m)
         return $ number > c
     ),
-    (" 1/2 chance",
+    ( " 1/2 chance",
       \_ _ -> do
-        number <- randomRIO (1:: Int, 2)
+        number <- randomRIO (1 :: Int, 2)
         return $ number == 1
     ),
-    (" 1/4 chance",
+    ( " 1/4 chance",
       \_ _ -> do
-        number <- randomRIO (1:: Int, 4)
+        number <- randomRIO (1 :: Int, 4)
         return $ number == 1
     ),
-    (" 1/8 chance",
+    ( " 1/8 chance",
       \_ _ -> do
-        number <- randomRIO (1:: Int, 8)
+        number <- randomRIO (1 :: Int, 8)
         return $ number == 1
     )
   ]
 
 -- time out before we kill a run
 timeoutMS :: Int
-timeoutMS = 40 * 10 ^ (6 :: Int)
+timeoutMS = 60 * 10 ^ (6 :: Int)
 
 runExpirements :: IO ()
 runExpirements = do
   putStrLn "hello experiments"
   experimentRunTimes "feasibility_strategys.csv" functions benchmarkFiles [30, 40, 45]
   experimentRunTimes "length_time.csv" [("", randomChooseCheck)] benchmarkFiles [30, 60, 90]
+  experimentPaths "paths_time.csv" benchmarkFiles [30, 60, 90]
 
 experimentRunTimes :: String -> [(String, Int -> Int -> IO Bool)] -> [String] -> [Int] -> IO ()
 experimentRunTimes filename fs files pathLengths =
@@ -73,6 +74,23 @@ experimentRunTimes filename fs files pathLengths =
     res <- experiment fs files pathLengths
     let runtimes = map (second $ map (showTime . fmap runtime)) res
     toCsvFile filename (("lengths", map show pathLengths) : runtimes)
+
+experimentPaths :: String -> [String] -> [Int] -> IO ()
+experimentPaths filename files pathLengths =
+  do
+    res <- experiment [("", randomChooseCheck)] files pathLengths
+    let extraData = addColums res
+    toCsvFile filename (("lengths", map show pathLengths) : extraData)
+  where
+    addColums :: [(String, [Maybe RunResult])] -> [(String, [String])]
+    addColums =
+      concatMap
+        ( \(column, results) ->
+            [ (column ++ " runtime", map (showTime . fmap runtime) results),
+              (column ++ " generated paths", map (show . fmap pathsGenerated) results),
+              (column ++ " pruned paths", map (show . fmap pathsPruned) results)
+            ]
+        )
 
 experiment :: [(String, Int -> Int -> IO Bool)] -> [String] -> [Int] -> IO [(String, [Maybe RunResult])]
 experiment fs files pathLengths =
