@@ -1,0 +1,4 @@
+lengths,examples/benchmark/divByN.gcl no heuristics,examples/benchmark/divByN.gcl,examples/benchmark/memberOf.gcl no heuristics,examples/benchmark/memberOf.gcl,examples/benchmark/pullUp.gcl no heuristics,examples/benchmark/pullUp.gcl
+30,0.026653266,0.060471478,0.066060648,0.08894727399999999,0.10519867599999999,0.086427115
+60,29.631923175,0.100591564,13.604414919,24.038609683,60000000,0.061394972
+90,60000000,0.497939366,60000000,60000000,60000000,0.041761
