@@ -7,6 +7,7 @@ import Parse
 import System.Timeout
 import Text.Printf
 import System.Random
+import PathTree (randomChooseCheck)
 
 experimentFiles :: [String]
 experimentFiles =
@@ -30,50 +31,57 @@ benchmarkFiles =
       "pullUp.gcl"
     ]
 
+-- different feasibility checking strategys to expirement with
 functions :: [(String, Int -> Int -> IO Bool)]
 functions =
-  [ (" always f ", \_ _ -> return True),
-    (" random",
+  [ (" always check ", \_ _ -> return True),
+    (" chance (m-c)/m",
       \c m -> do
         number <- randomRIO (1, m)
         return $ number > c
     ),
-    (" half",
+    (" 1/2 chance",
       \_ _ -> do
         number <- randomRIO (1:: Int, 2)
         return $ number == 1
     ),
-    (" quarter",
+    (" 1/4 chance",
       \_ _ -> do
         number <- randomRIO (1:: Int, 4)
         return $ number == 1
     ),
-    (" eight",
+    (" 1/8 chance",
       \_ _ -> do
         number <- randomRIO (1:: Int, 8)
         return $ number == 1
     )
   ]
 
+-- time out before we kill a run
 timeoutMS :: Int
 timeoutMS = 40 * 10 ^ (6 :: Int)
 
 runExpirements :: IO ()
 runExpirements = do
   putStrLn "hello experiments"
-  let lengths = [30, 40, 45]
-  runtimes <- experimentRunTimes functions benchmarkFiles lengths
-  let r = map (second $ map showTime) runtimes
-  toCsvFile "out.csv" (("lengths", map show lengths) : r)
+  experimentRunTimes "feasibility_strategys.csv" functions benchmarkFiles [30, 40, 45]
+  experimentRunTimes "length_time.csv" [("", randomChooseCheck)] benchmarkFiles [30, 60, 90]
 
-experimentRunTimes :: [(String, Int -> Int -> IO Bool)] -> [String] -> [Int] -> IO [(String, [Maybe Double])]
-experimentRunTimes fs files pathLengths =
+experimentRunTimes :: String -> [(String, Int -> Int -> IO Bool)] -> [String] -> [Int] -> IO ()
+experimentRunTimes filename fs files pathLengths =
+  do
+    res <- experiment fs files pathLengths
+    let runtimes = map (second $ map (showTime . fmap runtime)) res
+    toCsvFile filename (("lengths", map show pathLengths) : runtimes)
+
+experiment :: [(String, Int -> Int -> IO Bool)] -> [String] -> [Int] -> IO [(String, [Maybe RunResult])]
+experiment fs files pathLengths =
   sequence
     [ do
         let name = file ++ (if noHeur then " no heuristics" else "") ++ label
         print name
         lst <- sequence [timeout timeoutMS (run f noHeur len False file) | len <- pathLengths]
-        return (name, map (fmap runtime) lst)
+        return (name, lst)
       | file <- files,
         noHeur <- [True, False],
         (label, f) <- if noHeur then [("", \_ _ -> return True)] else fs
