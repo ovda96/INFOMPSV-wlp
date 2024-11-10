@@ -1,12 +1,15 @@
--- | Contains experiments for gathering data
-module Experiments (runExpirements) where
+-- | Experiments.hs: Contains experiments for gathering data
 
-import Data.Bifunctor (second)
-import Data.List (intercalate)
-import Parse
-import System.Timeout
-import Text.Printf
-import System.Random
+module Experiments (
+  runExpirements
+  ) where
+--
+import Data.Bifunctor ( second )
+import Data.List ( intercalate )
+import Parse ( RunResult(runtime), run )
+import System.Timeout ( timeout )
+import Text.Printf ( printf )
+import System.Random ( randomRIO )
 
 experimentFiles :: [String]
 experimentFiles =
@@ -95,8 +98,8 @@ csvMkLine :: [String] -> String
 csvMkLine xs = intercalate "," xs ++ "\n"
 
 combineLists :: [[a]] -> ([a] -> b) -> [b]
--- weird function that combines the i'th elements of each list
--- for example: combineLists ["abcd", "abcd","abcd","abcd"] id == ["aaaa","bbbb","cccc","dddd"]
+-- Weird function that combines the i'th elements of each list
+--  For example: combineLists ["abcd", "abcd","abcd","abcd"] id == ["aaaa","bbbb","cccc","dddd"]
 combineLists xs f
   | not (any null xs) = heads : tails
   | otherwise = []
